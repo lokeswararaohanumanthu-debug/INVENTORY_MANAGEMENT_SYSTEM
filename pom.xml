@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    =====================================================================
+    Mobile Showroom Inventory Management System
+    =====================================================================
+    This is the Maven Project Object Model (POM) file that defines the
+    project structure, dependencies, and build configuration.
+
+    Spring Boot 3.2.5 is used as the parent, providing auto-configuration
+    and dependency management for rapid application development.
+    =====================================================================
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Spring Boot Parent POM - provides default configurations and dependency versions -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.5</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+
+    <!-- Project Coordinates -->
+    <groupId>com.showroom</groupId>
+    <artifactId>inventory</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>Mobile Showroom Inventory Management System</name>
+    <description>
+        A comprehensive inventory management system for mobile showrooms.
+        Manages products, suppliers, purchases, sales, expenses, and stock movements.
+        Built with Spring Boot, Thymeleaf, Spring Security, and JPA.
+    </description>
+
+    <!-- Java Version Configuration -->
+    <properties>
+        <java.version>21</java.version>
+    </properties>
+
+    <dependencies>
+
+        <!-- ==================== CORE DEPENDENCIES ==================== -->
+
+        <!--
+            Spring Boot Starter Web
+            - Provides embedded Tomcat server
+            - Includes Spring MVC for building web controllers
+            - Handles HTTP requests and responses
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!--
+            Spring Boot Starter Data JPA
+            - Provides Java Persistence API (JPA) support via Hibernate
+            - Simplifies database operations with Repository pattern
+            - Handles ORM (Object-Relational Mapping) automatically
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!--
+            Spring Boot Starter Thymeleaf
+            - Server-side template engine for rendering HTML views
+            - Integrates naturally with Spring MVC controllers
+            - Supports HTML5 with natural templating
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+
+        <!--
+            Spring Boot Starter Security
+            - Provides authentication and authorization
+            - Protects endpoints with login-based security
+            - Supports role-based access control (ADMIN, MANAGER)
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!--
+            Spring Boot Starter Validation
+            - Enables Bean Validation (JSR 380) with annotations
+            - Validates user input using @NotNull, @Size, @Min, etc.
+            - Prevents invalid data from reaching the database
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!--
+            Thymeleaf Extras for Spring Security 6
+            - Adds Spring Security dialect to Thymeleaf templates
+            - Enables sec:authorize for role-based content display
+            - Shows/hides UI elements based on user permissions
+        -->
+        <dependency>
+            <groupId>org.thymeleaf.extras</groupId>
+            <artifactId>thymeleaf-extras-springsecurity6</artifactId>
+            <version>3.1.2.RELEASE</version>
+        </dependency>
+
+        <!-- ==================== DATABASE DRIVERS ==================== -->
+
+        <!--
+            MySQL Connector/J - MySQL JDBC Driver
+            - Used when deploying with a MySQL database
+            - Runtime scope: only needed when the application runs
+        -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!--
+            H2 Database Engine
+            - Lightweight, embedded, in-memory/file-based database
+            - Perfect for development and testing without installing MySQL
+            - Includes a web-based console for browsing data
+        -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- ==================== DEVELOPMENT TOOLS ==================== -->
+
+        <!--
+            Spring Boot DevTools
+            - Automatic application restart on code changes
+            - LiveReload support for browser refresh
+            - Enhanced development experience
+            - Optional: not included in production builds
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- ==================== TESTING ==================== -->
+
+        <!--
+            Spring Boot Starter Test
+            - Includes JUnit 5, Mockito, AssertJ, and Spring Test
+            - Provides @SpringBootTest for integration testing
+            - Test scope: only available during testing phase
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!--
+                Spring Boot Maven Plugin
+                - Packages the application as an executable JAR/WAR
+                - Enables running the app with: mvn spring-boot:run
+                - Includes all dependencies in the packaged artifact
+            -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker - MobileZone Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<div class="app-main">
+    <div th:replace="~{fragments/header :: header('Showroom Expenses Tracker')}"></div>
+
+    <div class="page-container">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <!-- Month Filter and Total Card -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-8">
+                <div class="content-card h-100">
+                    <form th:action="@{/expenses}" method="get" class="row g-2 align-items-center">
+                        <div class="col-sm-4">
+                            <label class="form-label small text-muted">Select Month</label>
+                            <select name="month" class="form-select">
+                                <option value="1" th:selected="${currentMonth == 1}">January</option>
+                                <option value="2" th:selected="${currentMonth == 2}">February</option>
+                                <option value="3" th:selected="${currentMonth == 3}">March</option>
+                                <option value="4" th:selected="${currentMonth == 4}">April</option>
+                                <option value="5" th:selected="${currentMonth == 5}">May</option>
+                                <option value="6" th:selected="${currentMonth == 6}">June</option>
+                                <option value="7" th:selected="${currentMonth == 7}">July</option>
+                                <option value="8" th:selected="${currentMonth == 8}">August</option>
+                                <option value="9" th:selected="${currentMonth == 9}">September</option>
+                                <option value="10" th:selected="${currentMonth == 10}">October</option>
+                                <option value="11" th:selected="${currentMonth == 11}">November</option>
+                                <option value="12" th:selected="${currentMonth == 12}">December</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label small text-muted">Select Year</label>
+                            <input type="number" name="year" class="form-control" th:value="${currentYear}">
+                        </div>
+                        <div class="col-sm-4 pt-4">
+                            <button type="submit" class="btn btn-primary w-100">Filter Expenses</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="metric-card border-warning">
+                    <span class="metric-title">Period Total Expenses</span>
+                    <div class="metric-value text-danger" th:text="'₹' + ${#numbers.formatDecimal(totalAmount, 1, 'COMMA', 2, 'POINT')}">₹0.00</div>
+                    <div class="metric-subtitle">Rent, Electricity, Staff Salaries, etc.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="fw-bold mb-0">Expense Entries</h5>
+            <a th:href="@{/expenses/new}" class="btn btn-primary btn-sm shadow-sm">
+                <i class="bi bi-plus-lg me-1"></i> Record New Expense
+            </a>
+        </div>
+
+        <!-- Table -->
+        <div class="table-custom">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th class="text-end">Amount (₹)</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="e : ${expenses}">
+                        <td class="small text-muted" th:text="${e.expenseDate}">2026-11-04</td>
+                        <td>
+                            <span class="badge bg-light text-dark border fw-semibold" th:text="${e.category.displayName}">Rent</span>
+                        </td>
+                        <td class="text-secondary" th:text="${e.description} ?: '-'">Monthly showroom lease</td>
+                        <td class="text-end fw-bold text-danger fs-6" th:text="'₹' + ${#numbers.formatDecimal(e.amount, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <a th:href="@{'/expenses/edit/' + ${e.id}}" class="btn btn-outline-primary" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form th:action="@{'/expenses/delete/' + ${e.id}}" method="post" class="d-inline"
+                                      onsubmit="return confirm('Delete this expense record?');">
+                                    <button type="submit" class="btn btn-outline-danger" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(expenses)}">
+                        <td colspan="5" class="text-center py-4 text-muted">No expenses recorded for this period.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

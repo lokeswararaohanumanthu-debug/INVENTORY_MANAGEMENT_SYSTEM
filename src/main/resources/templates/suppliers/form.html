@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${isNew} ? 'Add Supplier - MobileZone Pro' : 'Edit Supplier - MobileZone Pro'">Supplier Form</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<div class="app-main">
+    <div th:replace="~{fragments/header :: header(${isNew} ? 'Add New Supplier' : 'Edit Supplier')}"></div>
+
+    <div class="page-container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="content-card">
+                    <div class="content-card-header">
+                        <h5 class="content-card-title">
+                            <i class="bi bi-person-badge text-primary me-2"></i>
+                            <span th:text="${isNew} ? 'Supplier Information' : 'Update Supplier'">Supplier Form</span>
+                        </h5>
+                        <a th:href="@{/suppliers}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-left me-1"></i> Back
+                        </a>
+                    </div>
+
+                    <form th:action="@{/suppliers/save}" th:object="${supplier}" method="post">
+                        <input type="hidden" th:field="*{id}">
+
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label for="name" class="form-label fw-semibold small">Supplier / Company Name <span class="text-danger">*</span></label>
+                                <input type="text" id="name" th:field="*{name}" class="form-control"
+                                       th:classappend="${#fields.hasErrors('name')} ? 'is-invalid' : ''"
+                                       placeholder="e.g. Apex Telecom Wholesalers Ltd" required>
+                                <div class="invalid-feedback" th:errors="*{name}"></div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="contactPerson" class="form-label fw-semibold small">Contact Person Name</label>
+                                <input type="text" id="contactPerson" th:field="*{contactPerson}" class="form-control"
+                                       placeholder="e.g. Rajiv Sharma">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label fw-semibold small">Phone Number</label>
+                                <input type="text" id="phone" th:field="*{phone}" class="form-control"
+                                       placeholder="e.g. +91 98765 43210">
+                            </div>
+
+                            <div class="col-md-12">
+                                <label for="email" class="form-label fw-semibold small">Email Address</label>
+                                <input type="email" id="email" th:field="*{email}" class="form-control"
+                                       placeholder="e.g. sales@apextelecom.com">
+                            </div>
+
+                            <div class="col-12">
+                                <label for="address" class="form-label fw-semibold small">Office / Warehouse Address</label>
+                                <textarea id="address" th:field="*{address}" class="form-control" rows="3"
+                                          placeholder="Street, City, State, PIN Code..."></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="active" th:field="*{active}">
+                                    <label class="form-check-label fw-semibold small" for="active">Active Vendor</label>
+                                </div>
+                            </div>
+
+                            <div class="col-12 text-end pt-3 border-top">
+                                <a th:href="@{/suppliers}" class="btn btn-light border me-2">Cancel</a>
+                                <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                                    <i class="bi bi-check2 me-1"></i> Save Supplier
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

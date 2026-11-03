@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head></head>
+<body>
+<div th:fragment="sidebar" class="app-sidebar">
+    <a th:href="@{/dashboard}" class="sidebar-brand">
+        <i class="bi bi-phone-fill"></i>
+        <span>MobileZone Pro</span>
+    </a>
+
+    <ul class="sidebar-nav">
+        <li class="nav-section-title">Core</li>
+        <li>
+            <a th:href="@{/dashboard}" class="nav-link-custom" th:classappend="${activeNav == 'dashboard'} ? 'active' : ''">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+
+        <li class="nav-section-title">Showroom Operations</li>
+        <li>
+            <a th:href="@{/sales/billing}" class="nav-link-custom" th:classappend="${activeNav == 'billing'} ? 'active' : ''">
+                <i class="bi bi-receipt"></i>
+                <span>POS & Billing</span>
+            </a>
+        </li>
+        <li>
+            <a th:href="@{/sales}" class="nav-link-custom" th:classappend="${activeNav == 'sales'} ? 'active' : ''">
+                <i class="bi bi-bag-check-fill"></i>
+                <span>Sales Invoices</span>
+            </a>
+        </li>
+        <li>
+            <a th:href="@{/purchases}" class="nav-link-custom" th:classappend="${activeNav == 'purchases'} ? 'active' : ''">
+                <i class="bi bi-truck"></i>
+                <span>Purchases & Stock In</span>
+            </a>
+        </li>
+
+        <li class="nav-section-title">Inventory & Catalog</li>
+        <li>
+            <a th:href="@{/products}" class="nav-link-custom" th:classappend="${activeNav == 'products'} ? 'active' : ''">
+                <i class="bi bi-boxes"></i>
+                <span>Products Catalog</span>
+            </a>
+        </li>
+        <li>
+            <a th:href="@{/inventory}" class="nav-link-custom" th:classappend="${activeNav == 'inventory'} ? 'active' : ''">
+                <i class="bi bi-archive-fill"></i>
+                <span>Stock Levels</span>
+            </a>
+        </li>
+        <li>
+            <a th:href="@{/inventory/low-stock}" class="nav-link-custom" th:classappend="${activeNav == 'low-stock'} ? 'active' : ''">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>Low Stock Alerts</span>
+            </a>
+        </li>
+        <li>
+            <a th:href="@{/suppliers}" class="nav-link-custom" th:classappend="${activeNav == 'suppliers'} ? 'active' : ''">
+                <i class="bi bi-people-fill"></i>
+                <span>Suppliers</span>
+            </a>
+        </li>
+
+        <li class="nav-section-title">Finance & Analytics</li>
+        <li>
+            <a th:href="@{/expenses}" class="nav-link-custom" th:classappend="${activeNav == 'expenses'} ? 'active' : ''">
+                <i class="bi bi-cash-stack"></i>
+                <span>Expense Tracker</span>
+            </a>
+        </li>
+        <li>
+            <a th:href="@{/reports}" class="nav-link-custom" th:classappend="${activeNav == 'reports'} ? 'active' : ''">
+                <i class="bi bi-bar-chart-line-fill"></i>
+                <span>Reports & P&L</span>
+            </a>
+        </li>
+    </ul>
+
+    <div class="sidebar-footer">
+        <div class="user-info">
+            <div class="user-avatar">A</div>
+            <div>
+                <div class="fw-bold" style="font-size: 0.85rem;" sec:authentication="name">Admin</div>
+                <div style="font-size: 0.725rem; color: #94a3b8;">Administrator</div>
+            </div>
+        </div>
+        <form th:action="@{/logout}" method="post" class="m-0">
+            <button type="submit" class="btn btn-sm btn-outline-light border-0" title="Logout">
+                <i class="bi bi-box-arrow-right"></i>
+            </button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

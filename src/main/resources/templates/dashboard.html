@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executive Dashboard - MobileZone Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<!-- Sidebar Fragment -->
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<!-- Main Area -->
+<div class="app-main">
+    <div th:replace="~{fragments/header :: header('Executive Dashboard')}"></div>
+
+    <div class="page-container">
+        <!-- Flash messages -->
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <!-- KPI Cards Row 1 -->
+        <div class="row g-3 mb-4">
+            <div class="col-xl-3 col-md-6">
+                <div class="metric-card">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="metric-title">Today's Sales</span>
+                        <div class="metric-icon-box icon-green"><i class="bi bi-currency-rupee"></i></div>
+                    </div>
+                    <div class="metric-value" th:text="'₹' + ${#numbers.formatDecimal(dashboard.todaySales, 1, 'COMMA', 2, 'POINT')}">₹0.00</div>
+                    <div class="metric-subtitle text-success"><i class="bi bi-clock-history"></i> Live daily turnover</div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="metric-card">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="metric-title">Monthly Revenue</span>
+                        <div class="metric-icon-box icon-blue"><i class="bi bi-graph-up-arrow"></i></div>
+                    </div>
+                    <div class="metric-value" th:text="'₹' + ${#numbers.formatDecimal(dashboard.monthlyRevenue, 1, 'COMMA', 2, 'POINT')}">₹0.00</div>
+                    <div class="metric-subtitle text-muted">Current month sales total</div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="metric-card">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="metric-title">Monthly Expenses</span>
+                        <div class="metric-icon-box icon-amber"><i class="bi bi-wallet2"></i></div>
+                    </div>
+                    <div class="metric-value" th:text="'₹' + ${#numbers.formatDecimal(dashboard.monthlyExpenses, 1, 'COMMA', 2, 'POINT')}">₹0.00</div>
+                    <div class="metric-subtitle text-muted">Overhead + salaries + rent</div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="metric-card">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="metric-title">Monthly Net Profit</span>
+                        <div class="metric-icon-box" th:classappend="${dashboard.monthlyNetProfit >= 0} ? 'icon-teal' : 'icon-red'">
+                            <i class="bi bi-trophy-fill" th:if="${dashboard.monthlyNetProfit >= 0}"></i>
+                            <i class="bi bi-arrow-down-circle-fill" th:unless="${dashboard.monthlyNetProfit >= 0}"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" th:classappend="${dashboard.monthlyNetProfit >= 0} ? 'text-success' : 'text-danger'"
+                         th:text="'₹' + ${#numbers.formatDecimal(dashboard.monthlyNetProfit, 1, 'COMMA', 2, 'POINT')}">₹0.00</div>
+                    <div class="metric-subtitle text-muted">Gross Profit - Expenses</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI Cards Row 2 -->
+        <div class="row g-3 mb-4">
+            <div class="col-xl-4 col-md-6">
+                <div class="metric-card">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="metric-title">Active Products</span>
+                        <div class="metric-icon-box icon-purple"><i class="bi bi-phone"></i></div>
+                    </div>
+                    <div class="metric-value" th:text="${dashboard.totalProducts}">0</div>
+                    <div class="metric-subtitle text-muted">Distinct models & accessories in catalog</div>
+                </div>
+            </div>
+
+            <div class="col-xl-4 col-md-6">
+                <div class="metric-card">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="metric-title">Total Units In Stock</span>
+                        <div class="metric-icon-box icon-blue"><i class="bi bi-boxes"></i></div>
+                    </div>
+                    <div class="metric-value" th:text="${dashboard.totalStockQuantity} + ' Units'">0 Units</div>
+                    <div class="metric-subtitle text-muted">Aggregated showroom stock</div>
+                </div>
+            </div>
+
+            <div class="col-xl-4 col-md-12">
+                <div class="metric-card" th:classappend="${dashboard.lowStockCount > 0} ? 'border-warning' : ''">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="metric-title">Low Stock Alerts</span>
+                        <div class="metric-icon-box icon-red"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                    </div>
+                    <div class="metric-value text-danger" th:text="${dashboard.lowStockCount}">0</div>
+                    <div class="metric-subtitle">
+                        <a th:href="@{/inventory/low-stock}" class="text-decoration-none text-danger fw-semibold">
+                            View low stock items <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Low Stock Alert Banner (if any) -->
+        <div th:if="${dashboard.lowStockCount > 0}" class="content-card border-warning bg-warning bg-opacity-10 mb-4">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-exclamation-diamond-fill text-warning fs-3"></i>
+                    <div>
+                        <h6 class="mb-0 fw-bold text-dark">Attention Needed: <span th:text="${dashboard.lowStockCount}">0</span> items are below minimum stock level!</h6>
+                        <span class="small text-muted">Restock these models to avoid lost sales at the showroom counter.</span>
+                    </div>
+                </div>
+                <a th:href="@{/purchases/new}" class="btn btn-warning btn-sm fw-semibold shadow-sm">
+                    <i class="bi bi-cart-plus me-1"></i> Restock Now
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Transactions Grid -->
+        <div class="row g-4">
+            <!-- Recent Sales -->
+            <div class="col-lg-6">
+                <div class="content-card h-100">
+                    <div class="content-card-header">
+                        <h5 class="content-card-title"><i class="bi bi-receipt text-primary me-2"></i>Recent Sales</h5>
+                        <a th:href="@{/sales}" class="btn btn-outline-primary btn-sm">View All</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                            <tr>
+                                <th>Bill #</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th class="text-end">Amount</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="sale : ${dashboard.recentSales}">
+                                <td class="fw-semibold text-primary" th:text="${sale.billNumber}">BILL-001</td>
+                                <td th:text="${sale.customerName}">Walk-in</td>
+                                <td class="small text-muted" th:text="${sale.saleDate}">2026-11-04</td>
+                                <td class="text-end fw-bold" th:text="'₹' + ${#numbers.formatDecimal(sale.netAmount, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
+                                <td class="text-center">
+                                    <a th:href="@{'/sales/view/' + ${sale.id}}" class="btn btn-sm btn-light border py-0 px-2" title="View Invoice">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(dashboard.recentSales)}">
+                                <td colspan="5" class="text-center text-muted py-3">No sales recorded yet.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Purchases -->
+            <div class="col-lg-6">
+                <div class="content-card h-100">
+                    <div class="content-card-header">
+                        <h5 class="content-card-title"><i class="bi bi-truck text-secondary me-2"></i>Recent Restocks</h5>
+                        <a th:href="@{/purchases}" class="btn btn-outline-secondary btn-sm">View All</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                            <tr>
+                                <th>PO #</th>
+                                <th>Supplier</th>
+                                <th>Date</th>
+                                <th class="text-end">Total</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="p : ${dashboard.recentPurchases}">
+                                <td class="fw-semibold text-dark" th:text="${p.purchaseNumber}">PO-001</td>
+                                <td th:text="${p.supplier.name}">Supplier</td>
+                                <td class="small text-muted" th:text="${p.purchaseDate}">2026-11-04</td>
+                                <td class="text-end fw-bold" th:text="'₹' + ${#numbers.formatDecimal(p.totalAmount, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
+                                <td class="text-center">
+                                    <a th:href="@{'/purchases/view/' + ${p.id}}" class="btn btn-sm btn-light border py-0 px-2" title="View PO">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(dashboard.recentPurchases)}">
+                                <td colspan="5" class="text-center text-muted py-3">No purchases recorded yet.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

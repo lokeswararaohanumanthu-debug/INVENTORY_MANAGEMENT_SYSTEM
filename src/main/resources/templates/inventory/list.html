@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock & Inventory - MobileZone Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<div class="app-main">
+    <div th:replace="~{fragments/header :: header('Inventory & Stock Levels')}"></div>
+
+    <div class="page-container">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <!-- Inventory Stats Bar -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <span class="metric-title">Catalog Models</span>
+                    <div class="metric-value" th:text="${totalProducts}">0</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <span class="metric-title">Total Units In Showroom</span>
+                    <div class="metric-value text-primary" th:text="${totalStock} + ' Units'">0 Units</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <span class="metric-title">Low Stock SKUs</span>
+                    <div class="metric-value text-warning" th:text="${lowStockCount}">0</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <span class="metric-title">Out of Stock SKUs</span>
+                    <div class="metric-value text-danger" th:text="${outOfStockCount}">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="fw-bold mb-0">Showroom Stock Overview</h5>
+            <div class="d-flex gap-2">
+                <a th:href="@{/inventory/movements}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-clock-history me-1"></i> Movement Log
+                </a>
+                <a th:href="@{/purchases/new}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-cart-plus me-1"></i> Restock Stock In
+                </a>
+            </div>
+        </div>
+
+        <!-- Stock Table -->
+        <div class="table-custom">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Product & Brand</th>
+                        <th>Category</th>
+                        <th class="text-center">Min Level</th>
+                        <th class="text-center">Current Stock</th>
+                        <th class="text-center">Stock Health</th>
+                        <th class="text-center">Quick Adjust</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="product : ${products}">
+                        <td class="font-monospace fw-bold text-primary" th:text="${product.productCode}">MOB-001</td>
+                        <td>
+                            <div class="fw-semibold text-dark" th:text="${product.name}">Product Name</div>
+                            <small class="text-muted" th:text="${product.brand} + ' • ' + (${product.model} ?: '')">Apple • 256GB</small>
+                        </td>
+                        <td class="small text-secondary" th:text="${product.category.displayName}">Category</td>
+                        <td class="text-center text-muted" th:text="${product.minStockLevel}">5</td>
+                        <td class="text-center fw-bold fs-6" th:text="${product.quantity}">10</td>
+                        <td class="text-center">
+                            <span class="badge"
+                                  th:classappend="${product.isOutOfStock()} ? 'bg-danger' : (${product.isLowStock()} ? 'bg-warning text-dark' : 'bg-success')"
+                                  th:text="${product.isOutOfStock()} ? 'Out of Stock' : (${product.isLowStock()} ? 'Low Stock' : 'Optimal')">
+                                Optimal
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#adjustModal"
+                                    th:data-id="${product.id}"
+                                    th:data-name="${product.name}"
+                                    th:data-current="${product.quantity}">
+                                <i class="bi bi-sliders"></i> Adjust
+                            </button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stock Adjustment Modal -->
+<div class="modal fade" id="adjustModal" tabindex="-1" aria-labelledby="adjustModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form th:action="@{/inventory/adjust}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="adjustModalLabel">Manual Stock Adjustment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="modalProductId" name="productId">
+                    <div class="mb-3">
+                        <label class="form-label small text-muted">Product</label>
+                        <input type="text" id="modalProductName" class="form-control" readonly>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Current Quantity</label>
+                            <input type="number" id="modalCurrentQty" class="form-control" readonly>
+                        </div>
+                        <div class="col-6">
+                            <label for="newQuantity" class="form-label small fw-bold">New Physical Count <span class="text-danger">*</span></label>
+                            <input type="number" min="0" id="newQuantity" name="newQuantity" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reason" class="form-label small fw-bold">Adjustment Reason</label>
+                        <input type="text" id="reason" name="reason" class="form-control" placeholder="e.g. Physical inventory count / Damaged unit write-off">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Adjustment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const adjustModal = document.getElementById('adjustModal');
+    if (adjustModal) {
+        adjustModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            document.getElementById('modalProductId').value = button.getAttribute('data-id');
+            document.getElementById('modalProductName').value = button.getAttribute('data-name');
+            document.getElementById('modalCurrentQty').value = button.getAttribute('data-current');
+            document.getElementById('newQuantity').value = button.getAttribute('data-current');
+        });
+    }
+</script>
+</body>
+</html>

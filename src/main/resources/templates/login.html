@@ -1,95 +1,470 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Mobile Showroom Inventory System</title>
+    <title>Sign In - INVENTRA</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <style>
         body {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background:
+                radial-gradient(at 15% 15%, rgba(56, 189, 248, 0.25) 0px, transparent 45%),
+                radial-gradient(at 85% 20%, rgba(59, 130, 246, 0.28) 0px, transparent 50%),
+                radial-gradient(at 75% 85%, rgba(139, 92, 246, 0.22) 0px, transparent 50%),
+                radial-gradient(circle at top left, #1e293b 0%, #0f172a 55%, #090d16 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
             margin: 0;
-            padding: 1rem;
-        }
-        .login-card {
-            background: #ffffff;
-            border-radius: 16px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-            width: 100%;
-            max-width: 420px;
+            padding: 1.5rem 1rem;
+            position: relative;
             overflow: hidden;
         }
-        .login-header {
-            background: linear-gradient(135deg, #2563eb, #0ea5e9);
-            color: #ffffff;
-            padding: 2.25rem 2rem;
-            text-align: center;
-        }
-        .login-body {
-            padding: 2rem;
-        }
-        .brand-icon {
-            font-size: 3rem;
-            margin-bottom: 0.5rem;
-            display: inline-block;
-        }
-    </style>
-</head>
-<body>
 
-<div class="login-card">
-    <div class="login-header">
-        <i class="bi bi-phone brand-icon"></i>
-        <h3 class="fw-bold mb-1">MobileZone Pro</h3>
-        <p class="mb-0 text-white-50 small">Showroom & Inventory Management System</p>
+        .login-card-single {
+            width: 100%;
+            max-width: 430px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.86) 0%, rgba(255, 255, 255, 0.70) 100%);
+            backdrop-filter: blur(22px) saturate(180%);
+            -webkit-backdrop-filter: blur(22px) saturate(180%);
+            border-radius: 22px;
+            box-shadow:
+                0 28px 56px rgba(0, 0, 0, 0.42),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            position: relative;
+            z-index: 2;
+            animation: inventraTileAppear 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        .login-card-single::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0;
+            transition: opacity 0.32s ease;
+            background: radial-gradient(
+                420px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+                rgba(56, 189, 248, 0.24) 0%,
+                rgba(99, 102, 241, 0.12) 42%,
+                transparent 72%
+            );
+        }
+
+        .login-card-single:hover::after {
+            opacity: 1;
+        }
+
+        .login-card-single > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .login-brand-banner {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.94) 0%, rgba(30, 58, 138, 0.92) 55%, rgba(29, 78, 216, 0.90) 100%);
+            backdrop-filter: blur(12px);
+            color: #ffffff;
+            padding: 2.1rem 1.85rem 1.75rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .login-brand-badge {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #38bdf8 0%, #2563eb 55%, #6366f1 100%);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.65rem;
+            margin-bottom: 0.85rem;
+            box-shadow: 0 10px 24px -4px rgba(56, 189, 248, 0.65);
+            animation: inventraLogoPulse 4s ease-in-out infinite;
+        }
+
+        .login-inventra-title {
+            font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+            font-weight: 900;
+            font-size: 1.75rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            background: linear-gradient(110deg, #ffffff 0%, #bae6fd 40%, #60a5fa 70%, #ffffff 100%);
+            background-size: 220% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: inventraTextShine 6s linear infinite;
+            margin-bottom: 0.25rem;
+        }
+
+        .login-form-container {
+            padding: 1.85rem 1.85rem 1.65rem;
+        }
+        .login-input-group .input-group-text {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #64748b;
+        }
+
+        .login-input-group .form-control {
+            border-color: #cbd5e1;
+            height: 44px;
+            font-size: 0.92rem;
+        }
+        .login-input-group .form-control:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+        }
+        .btn-signin-submit {
+            height: 44px;
+            font-weight: 600;
+            font-size: 0.94rem;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+            border: 1px solid #1d4ed8;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+            transition: all 0.18s ease;
+        }
+
+        .btn-signin-submit:hover, .btn-signin-submit:focus {
+            background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .login-theme-toggle {
+            position: fixed;
+            top: 1.15rem;
+            right: 1.15rem;
+            z-index: 100;
+        }
+
+        [data-theme="dark"] .login-card-single {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.76) 0%, rgba(15, 23, 42, 0.64) 100%);
+            border-color: rgba(255, 255, 255, 0.16);
+            box-shadow:
+                0 28px 60px rgba(0, 0, 0, 0.65),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.18);
+            color: #f1f5f9;
+        }
+
+    </style>
+    <script>
+        (function () {
+            try {
+                var savedTheme = localStorage.getItem('mz_theme') || 'light';
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                document.documentElement.setAttribute('data-bs-theme', savedTheme);
+            } catch (e) { }
+        })();
+    </script>
+</head>
+
+<body class="login-page">
+
+    <div class="ambient-motion-canvas" aria-hidden="true">
+        <div class="ambient-grid-overlay"></div>
+        <div class="ambient-sleek-beam ambient-sleek-beam-1"></div>
+        <div class="ambient-sleek-beam ambient-sleek-beam-2"></div>
+        <div class="ambient-orb ambient-orb-1"></div>
+        <div class="ambient-orb ambient-orb-2"></div>
+        <div class="ambient-orb ambient-orb-3"></div>
+        <div class="ambient-orb ambient-orb-4"></div>
+
+        <!-- Extended Floating Inventory Management & POS Holographic Background Elements -->
+        <div class="inv-floating-layer">
+            <div class="inv-bg-item inv-bg-item-1">
+                <i class="bi bi-box-seam-fill"></i>
+                <span class="inv-bg-tag"><span>Stock Ledger</span><span class="inv-bg-sub">Live SKU Sync</span></span>
+            </div>
+            <div class="inv-bg-item inv-bg-item-2">
+                <i class="bi bi-upc-scan"></i>
+                <span class="inv-bg-tag"><span>Barcode POS</span><span class="inv-bg-sub">Instant Scan</span></span>
+            </div>
+            <div class="inv-bg-item inv-bg-item-3">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span class="inv-bg-tag"><span>Demand Velocity</span><span class="inv-bg-sub">AI Forecast</span></span>
+            </div>
+            <div class="inv-bg-item inv-bg-item-4">
+                <i class="bi bi-qr-code-scan"></i>
+                <span class="inv-bg-tag"><span>IMEI &amp; Batch</span><span class="inv-bg-sub">Verified Track</span></span>
+            </div>
+            <div class="inv-bg-item inv-bg-item-5">
+                <i class="bi bi-truck"></i>
+                <span class="inv-bg-tag"><span>Supply Chain</span><span class="inv-bg-sub">Vendor Stock-In</span></span>
+            </div>
+            <div class="inv-bg-item inv-bg-item-6">
+                <i class="bi bi-receipt-cutoff"></i>
+                <span class="inv-bg-tag"><span>GST Billing</span><span class="inv-bg-sub">Smart Invoice</span></span>
+            </div>
+            <div class="inv-bg-item inv-bg-item-7">
+                <i class="bi bi-layers-fill"></i>
+                <span class="inv-bg-tag"><span>Warehouse Tiers</span><span class="inv-bg-sub">Multi-Category</span></span>
+            </div>
+            <div class="inv-bg-item inv-bg-item-8">
+                <i class="bi bi-tags-fill"></i>
+                <span class="inv-bg-tag"><span>Catalog Pricing</span><span class="inv-bg-sub">Margin Guard</span></span>
+            </div>
+            <div class="inv-bg-item inv-bg-item-9">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span class="inv-bg-tag"><span>Low-Stock Radar</span><span class="inv-bg-sub">Threshold Alert</span></span>
+            </div>
+            <div class="inv-bg-item inv-bg-item-10">
+                <i class="bi bi-shield-check"></i>
+                <span class="inv-bg-tag"><span>RBAC Governance</span><span class="inv-bg-sub">Audit Secured</span></span>
+            </div>
+            <div class="inv-bg-item inv-bg-item-11">
+                <i class="bi bi-pie-chart-fill"></i>
+                <span class="inv-bg-tag"><span>P&amp;L Accrual</span><span class="inv-bg-sub">Net Margin Live</span></span>
+            </div>
+            <div class="inv-bg-item inv-bg-item-12">
+                <i class="bi bi-cpu-fill"></i>
+                <span class="inv-bg-tag"><span>Smart Reorder</span><span class="inv-bg-sub">Stock Intelligence</span></span>
+            </div>
+        </div>
     </div>
 
-    <div class="login-body">
-        <div th:if="${errorMessage}" class="alert alert-danger py-2 small d-flex align-items-center gap-2 mb-3">
-            <i class="bi bi-exclamation-circle-fill"></i>
-            <span th:text="${errorMessage}">Invalid credentials</span>
+    <div class="login-theme-toggle">
+        <button type="button" id="loginThemeBtn" class="theme-toggle-btn inventra-ripple-host" title="Switch Theme">
+            <i class="bi bi-moon-stars-fill" id="loginThemeIcon"></i>
+            <span id="loginThemeLabel">Dark Mode</span>
+        </button>
+    </div>
+
+<div class="login-card-single sleek-light-card inventra-loading-shimmer">
+    <div class="login-brand-banner">
+        <div class="login-brand-badge">
+            <i class="bi bi-boxes"></i>
+        </div>
+        <h4 class="login-inventra-title">INVENTRA</h4>
+        <p class="mb-0 text-white-50 small" style="letter-spacing: 0.06em; text-transform: uppercase; font-size: 0.72rem; font-weight: 600;">Intelligent Showroom POS &amp; Inventory Suite</p>
+    </div>
+
+    <div class="login-form-container">
+        <div th:if="${errorMessage}" class="alert alert-danger py-2 small d-flex align-items-center gap-2 mb-3" role="alert">
+            <i class="bi bi-exclamation-circle-fill flex-shrink-0"></i>
+            <span th:text="${errorMessage}">Invalid username or password.</span>
         </div>
 
-        <div th:if="${logoutMessage}" class="alert alert-success py-2 small d-flex align-items-center gap-2 mb-3">
-            <i class="bi bi-check-circle-fill"></i>
-            <span th:text="${logoutMessage}">Logged out</span>
+        <div th:if="${logoutMessage}" class="alert alert-success inventra-success-flourish py-2 small d-flex align-items-center gap-2 mb-3" role="alert">
+            <i class="bi bi-check-circle-fill flex-shrink-0"></i>
+            <span th:text="${logoutMessage}">You have been signed out securely.</span>
         </div>
 
-        <form th:action="@{/login}" method="post">
-            <div class="mb-3">
-                <label for="username" class="form-label small fw-semibold text-secondary">Username</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-light text-muted"><i class="bi bi-person"></i></span>
-                    <input type="text" id="username" name="username" class="form-control" placeholder="Enter username" required autofocus value="admin">
+        <form th:action="@{/login}" method="post" id="loginForm" class="focus-rack-container" autocomplete="on">
+            <div class="mb-3 focus-rack-group">
+                <label for="username" class="form-label small fw-semibold text-secondary">Employee User ID / Username</label>
+                <div class="input-group login-input-group">
+                    <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
+                    <input type="text"
+                           id="username"
+                           name="username"
+                           class="form-control"
+                           placeholder="Enter your employee User ID"
+                           required
+                           autofocus
+                           autocomplete="username">
                 </div>
             </div>
 
-            <div class="mb-4">
+            <div class="mb-4 focus-rack-group">
                 <label for="password" class="form-label small fw-semibold text-secondary">Password</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-light text-muted"><i class="bi bi-lock"></i></span>
-                    <input type="password" id="password" name="password" class="form-control" placeholder="Enter password" required value="admin123">
+                <div class="input-group login-input-group">
+                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                    <input type="password"
+                           id="password"
+                           name="password"
+                           class="form-control"
+                           placeholder="Enter your password"
+                           required
+                           autocomplete="current-password">
+                    <button type="button"
+                            class="btn btn-outline-secondary px-3 inventra-ripple-host"
+                            id="togglePwdBtn"
+                            title="Show or Hide Password"
+                            aria-label="Show or Hide Password">
+                        <i class="bi bi-eye" id="togglePwdIcon"></i>
+                    </button>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm">
-                <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to Dashboard
+            <button type="submit" class="btn btn-primary btn-signin-submit w-100 inventra-ripple-host">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
             </button>
         </form>
 
-        <div class="mt-4 pt-3 border-top text-center text-muted small">
-            <div class="fw-semibold text-dark">Academic Demo Credentials:</div>
-            <div>Username: <code class="text-primary">admin</code> | Password: <code class="text-primary">admin123</code></div>
-        </div>
+        <div class="mt-4 pt-3 border-top d-flex align-items-center justify-content-between small text-muted" style="font-size: 0.76rem;">
+            <span><i class="bi bi-shield-lock-fill text-primary me-1"></i>Role-Based Access Control</span>
+            <span>Authorized Staff Only</span>
     </div>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+        (function () {
+            var togglePwdBtn = document.getElementById('togglePwdBtn');
+            var pwdInput = document.getElementById('password');
+            var pwdIcon = document.getElementById('togglePwdIcon');
+            if (togglePwdBtn && pwdInput && pwdIcon) {
+                togglePwdBtn.addEventListener('click', function () {
+                    if (pwdInput.type === 'password') {
+                        pwdInput.type = 'text';
+                        pwdIcon.className = 'bi bi-eye-slash';
+                    } else {
+                        pwdInput.type = 'password';
+                        pwdIcon.className = 'bi bi-eye';
+                    }
+                });
+            }
+
+            function syncLoginTheme(theme) {
+                var normalized = (theme === 'dark') ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', normalized);
+                document.documentElement.setAttribute('data-bs-theme', normalized);
+                var icon = document.getElementById('loginThemeIcon');
+                var label = document.getElementById('loginThemeLabel');
+                if (icon && label) {
+                    if (normalized === 'dark') {
+                        icon.className = 'bi bi-sun-fill text-warning';
+                        label.textContent = 'Light Mode';
+                    } else {
+                        icon.className = 'bi bi-moon-stars-fill';
+                        label.textContent = 'Dark Mode';
+                    }
+                }
+            }
+            var current = 'light';
+            try { current = localStorage.getItem('mz_theme') || 'light'; } catch (e) { }
+            syncLoginTheme(current);
+            var btn = document.getElementById('loginThemeBtn');
+            if (btn) {
+                btn.addEventListener('click', function () {
+                    var active = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+                    var next = active === 'dark' ? 'light' : 'dark';
+                    try { localStorage.setItem('mz_theme', next); } catch (e) { }
+                    syncLoginTheme(next);
+                });
+            }
+
+            var loginCard = document.querySelector('.login-card-single');
+            if (loginCard) {
+                loginCard.addEventListener('pointermove', function (e) {
+                    var rect = loginCard.getBoundingClientRect();
+                    var x = e.clientX - rect.left;
+                    var y = e.clientY - rect.top;
+                    loginCard.style.setProperty('--mouse-x', x + 'px');
+                    loginCard.style.setProperty('--mouse-y', y + 'px');
+                    /* 3D Parallax Tilt */
+                    var rx = ((y / rect.height) - 0.5) * -6;
+                    var ry = ((x / rect.width) - 0.5) * 6;
+                    loginCard.style.setProperty('--tilt-x', rx.toFixed(2) + 'deg');
+                    loginCard.style.setProperty('--tilt-y', ry.toFixed(2) + 'deg');
+                    loginCard.classList.add('is-tilting');
+                }, { passive: true });
+                loginCard.addEventListener('pointerleave', function () {
+                    loginCard.classList.remove('is-tilting');
+                    loginCard.style.setProperty('--tilt-x', '0deg');
+                    loginCard.style.setProperty('--tilt-y', '0deg');
+                });
+            }
+
+            /* ---------- Camera Focus Rack Effect on Login Form ---------- */
+            var rackContainer = document.getElementById('loginForm');
+            var rackGroups = document.querySelectorAll('.focus-rack-group');
+            if (rackContainer && rackGroups.length) {
+                rackContainer.addEventListener('focusin', function (e) {
+                    var grp = e.target.closest ? e.target.closest('.focus-rack-group') : null;
+                    if (!grp) { return; }
+                    rackContainer.classList.add('is-racking');
+                    document.body.classList.add('login-focus-rack-active');
+                    for (var i = 0; i < rackGroups.length; i++) {
+                        rackGroups[i].classList.toggle('is-focused', rackGroups[i] === grp);
+                    }
+                });
+                rackContainer.addEventListener('focusout', function () {
+                    setTimeout(function () {
+                        if (!rackContainer.contains(document.activeElement)) {
+                            rackContainer.classList.remove('is-racking');
+                            document.body.classList.remove('login-focus-rack-active');
+                            for (var i = 0; i < rackGroups.length; i++) {
+                                rackGroups[i].classList.remove('is-focused');
+                            }
+                        }
+                    }, 60);
+                });
+            }
+
+            /* ---------- Typing Placeholder Effect on Login Fields ---------- */
+            function attachTypewriterPlaceholder(inputEl, phrases) {
+                if (!inputEl || !phrases || !phrases.length) { return; }
+                var pIdx = 0, cIdx = 0, deleting = false;
+                function tick() {
+                    if (document.activeElement === inputEl || inputEl.value.length > 0) {
+                        setTimeout(tick, 1200);
+                        return;
+                    }
+                    var currentPhrase = phrases[pIdx];
+                    if (!deleting) {
+                        cIdx++;
+                        inputEl.setAttribute('placeholder', currentPhrase.slice(0, cIdx));
+                        if (cIdx >= currentPhrase.length) {
+                            deleting = true;
+                            setTimeout(tick, 1800);
+                            return;
+                        }
+                        setTimeout(tick, 55);
+                    } else {
+                        cIdx--;
+                        inputEl.setAttribute('placeholder', currentPhrase.slice(0, Math.max(cIdx, 1)));
+                        if (cIdx <= 1) {
+                            deleting = false;
+                            pIdx = (pIdx + 1) % phrases.length;
+                            setTimeout(tick, 320);
+                            return;
+                        }
+                        setTimeout(tick, 28);
+                    }
+                }
+                setTimeout(tick, 900);
+            }
+
+            attachTypewriterPlaceholder(document.getElementById('username'), [
+                'Enter your employee User ID...',
+                'e.g. admin, manager, sales1...',
+                'Scan or type Showroom Staff ID...'
+            ]);
+            attachTypewriterPlaceholder(document.getElementById('password'), [
+                'Enter your secure password...',
+                'RBAC encrypted showroom passkey...'
+            ]);
+
+            /* ---------- Click Ripple Effect ---------- */
+            document.addEventListener('pointerdown', function (e) {
+                var host = e.target.closest ? e.target.closest('.btn, .theme-toggle-btn, .inventra-ripple-host') : null;
+                if (!host) { return; }
+                host.classList.add('inventra-ripple-host');
+                var rect = host.getBoundingClientRect();
+                var size = Math.max(rect.width, rect.height);
+                var wave = document.createElement('span');
+                wave.className = 'inventra-ripple-wave';
+                wave.style.width = wave.style.height = size + 'px';
+                wave.style.left = (e.clientX - rect.left - size / 2) + 'px';
+                wave.style.top = (e.clientY - rect.top - size / 2) + 'px';
+                host.appendChild(wave);
+                setTimeout(function () { if (wave.parentNode) { wave.parentNode.removeChild(wave); } }, 680);
+            });
+        })();
+    </script>
 </body>
+
 </html>

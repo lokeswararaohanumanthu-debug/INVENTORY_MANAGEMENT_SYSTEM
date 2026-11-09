@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock & Inventory - MobileZone Pro</title>
+    <title>Stock Levels & Inventory - INVENTRA</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/style.css}">
@@ -13,98 +13,500 @@
 <div th:replace="~{fragments/sidebar :: sidebar}"></div>
 
 <div class="app-main">
-    <div th:replace="~{fragments/header :: header('Inventory & Stock Levels')}"></div>
+    <div th:replace="~{fragments/header :: header('Stock Levels & Inventory Management')}"></div>
 
     <div class="page-container">
         <div th:replace="~{fragments/alerts :: alerts}"></div>
 
-        <!-- Inventory Stats Bar -->
+        <!-- =====================================================================
+             TOP KPI STATS SUMMARY BAR
+             ===================================================================== -->
         <div class="row g-3 mb-4">
-            <div class="col-md-3">
-                <div class="metric-card">
-                    <span class="metric-title">Catalog Models</span>
-                    <div class="metric-value" th:text="${totalProducts}">0</div>
-                </div>
+            <div class="col-xl-3 col-md-6">
+                <a th:href="@{/inventory(tab='all')}" class="text-decoration-none">
+                    <div class="metric-card" th:classappend="${activeTab == 'all'} ? 'border-primary' : ''">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="metric-title mb-0">Catalog Models</span>
+                            <div class="metric-icon-box icon-blue">
+                                <i class="bi bi-boxes"></i>
+                            </div>
+                        </div>
+                        <div class="metric-value" th:text="${totalProducts}">0</div>
+                        <div class="metric-subtitle">Active showroom SKUs</div>
+                    </div>
+                </a>
             </div>
-            <div class="col-md-3">
+            <div class="col-xl-3 col-md-6">
                 <div class="metric-card">
-                    <span class="metric-title">Total Units In Showroom</span>
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="metric-title mb-0">Total Showroom Units</span>
+                        <div class="metric-icon-box icon-teal">
+                            <i class="bi bi-archive-fill"></i>
+                        </div>
+                    </div>
                     <div class="metric-value text-primary" th:text="${totalStock} + ' Units'">0 Units</div>
+                    <div class="metric-subtitle">Physical aggregated inventory</div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="metric-card">
-                    <span class="metric-title">Low Stock SKUs</span>
-                    <div class="metric-value text-warning" th:text="${lowStockCount}">0</div>
-                </div>
+            <div class="col-xl-3 col-md-6">
+                <a th:href="@{/inventory(tab='low-stock')}" class="text-decoration-none">
+                    <div class="metric-card" th:classappend="${activeTab == 'low-stock'} ? 'border-warning shadow-sm' : ''">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="metric-title mb-0">Low Stock SKUs</span>
+                            <div class="metric-icon-box icon-amber">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                            </div>
+                        </div>
+                        <div class="metric-value text-warning" th:text="${lowStockCount}">0</div>
+                        <div class="metric-subtitle">At or below minimum threshold</div>
+                    </div>
+                </a>
             </div>
-            <div class="col-md-3">
-                <div class="metric-card">
-                    <span class="metric-title">Out of Stock SKUs</span>
-                    <div class="metric-value text-danger" th:text="${outOfStockCount}">0</div>
+            <div class="col-xl-3 col-md-6">
+                <a th:href="@{/inventory(tab='out-of-stock')}" class="text-decoration-none">
+                    <div class="metric-card" th:classappend="${activeTab == 'out-of-stock'} ? 'border-danger shadow-sm' : ''">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="metric-title mb-0">Out of Stock SKUs</span>
+                            <div class="metric-icon-box icon-red">
+                                <i class="bi bi-x-circle-fill"></i>
+                            </div>
+                        </div>
+                        <div class="metric-value text-danger" th:text="${outOfStockCount}">0</div>
+                        <div class="metric-subtitle">Zero available stock</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- =====================================================================
+             CONSOLIDATED MODULE NAVIGATION TABS & ACTION BUTTONS
+             ===================================================================== -->
+        <div class="module-nav-tabs-bar mb-4">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pb-2 border-bottom">
+                <div class="d-inline-flex p-1 rounded-3 module-nav-bar flex-wrap gap-1" role="tablist">
+                    <!-- Tab A: All Stock -->
+                    <a th:href="@{/inventory(tab='all')}"
+                       class="module-nav-tab"
+                       th:classappend="${activeTab == 'all' or activeTab == null or activeTab == ''} ? 'active' : ''">
+                        <i class="bi bi-boxes me-1"></i>
+                        <span>All Stock</span>
+                        <span class="badge rounded-pill bg-secondary ms-1" th:text="${totalProducts}">11</span>
+                    </a>
+
+                    <!-- Tab B: Low Stock Products -->
+                    <a th:href="@{/inventory(tab='low-stock')}"
+                       class="module-nav-tab"
+                       th:classappend="${activeTab == 'low-stock'} ? 'active' : ''">
+                        <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>
+                        <span>Low Stock Products</span>
+                        <span th:if="${lowStockCount > 0}" class="badge rounded-pill bg-warning text-dark ms-1" th:text="${lowStockCount}">1</span>
+                    </a>
+
+                    <!-- Tab C: Out of Stock -->
+                    <a th:href="@{/inventory(tab='out-of-stock')}"
+                       class="module-nav-tab"
+                       th:classappend="${activeTab == 'out-of-stock'} ? 'active' : ''">
+                        <i class="bi bi-x-circle-fill text-danger me-1"></i>
+                        <span>Out of Stock</span>
+                        <span th:if="${outOfStockCount > 0}" class="badge rounded-pill bg-danger ms-1" th:text="${outOfStockCount}">0</span>
+                    </a>
+
+                    <!-- Tab D: Stock Movement -->
+                    <a th:href="@{/inventory(tab='movements')}"
+                       class="module-nav-tab"
+                       th:classappend="${activeTab == 'movements'} ? 'active' : ''">
+                        <i class="bi bi-clock-history me-1"></i>
+                        <span>Stock Movement</span>
+                        <span class="badge rounded-pill bg-light text-secondary border ms-1" th:text="${movementCount}">0</span>
+                    </a>
+
+                    <!-- Tab E: Smart Inventory Intelligence -->
+                    <a th:href="@{/inventory(tab='intelligence')}"
+                       class="module-nav-tab"
+                       th:classappend="${activeTab == 'intelligence'} ? 'active' : ''">
+                        <i class="bi bi-cpu-fill text-info me-1"></i>
+                        <span>Smart Intelligence</span>
+                        <span class="badge bg-info-subtle text-info border border-info-subtle ms-1" style="font-size: 0.65rem;">AI</span>
+                    </a>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <a th:if="${@rbac.has('INVENTORY_REPORT_VIEW')}"
+                       th:href="@{/inventory/export}"
+                       class="btn btn-outline-success btn-sm d-inline-flex align-items-center gap-1">
+                        <i class="bi bi-file-earmark-spreadsheet"></i>
+                        <span>Export CSV</span>
+                    </a>
+                    <a th:if="${@rbac.has('PURCHASE_CREATE')}"
+                       th:href="@{/purchases/new}"
+                       class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1 shadow-sm">
+                        <i class="bi bi-cart-plus"></i>
+                        <span>Restock Stock In</span>
+                    </a>
                 </div>
             </div>
         </div>
 
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <h5 class="fw-bold mb-0">Showroom Stock Overview</h5>
-            <div class="d-flex gap-2">
-                <a th:href="@{/inventory/movements}" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-clock-history me-1"></i> Movement Log
-                </a>
-                <a th:href="@{/purchases/new}" class="btn btn-primary btn-sm">
-                    <i class="bi bi-cart-plus me-1"></i> Restock Stock In
-                </a>
+        <!-- =====================================================================
+             SECTION A: ALL STOCK OVERVIEW (Search & Category Filters + Table)
+             ===================================================================== -->
+        <div th:if="${activeTab == 'all' or activeTab == null or activeTab == ''}">
+            <!-- Filter Bar -->
+            <form th:action="@{/inventory}" method="get" class="row g-2 align-items-end mb-3">
+                <input type="hidden" name="tab" value="all">
+                <div class="col-md-5 col-sm-12">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" name="search" class="form-control" placeholder="Search by product name, SKU, or brand..." th:value="${searchQuery}">
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                    <select name="category" class="form-select form-select-sm">
+                        <option value="">-- All Categories --</option>
+                        <option th:each="cat : ${categories}"
+                                th:value="${cat.name()}"
+                                th:text="${cat.displayName}"
+                                th:selected="${selectedCategory == cat.name()}">Category</option>
+                    </select>
+                </div>
+                <div class="col-md-3 col-sm-6 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                        <i class="bi bi-funnel me-1"></i>Filter
+                    </button>
+                    <a th:href="@{/inventory(tab='all')}" class="btn btn-outline-secondary btn-sm px-3" title="Reset Filters">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </a>
+                </div>
+            </form>
+
+            <!-- All Stock Table -->
+            <div class="table-custom">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th>SKU / Code</th>
+                            <th>Product Name &amp; Model</th>
+                            <th>Category</th>
+                            <th class="text-center">Min Threshold</th>
+                            <th class="text-center">Available Stock</th>
+                            <th class="text-center">Stock Status</th>
+                            <th class="text-center" th:if="${@rbac.has('STOCK_ADJUST')}">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="product : ${products}">
+                            <td class="font-monospace fw-bold text-primary" th:text="${product.productCode}">MOB-001</td>
+                            <td>
+                                <div class="fw-semibold text-dark" th:text="${product.name}">Product Name</div>
+                                <small class="text-muted" th:text="${product.brand} + ' • ' + (${product.model} ?: '')">Apple • 256GB</small>
+                            </td>
+                            <td class="small text-secondary" th:text="${product.category.displayName}">Category</td>
+                            <td class="text-center text-muted" th:text="${product.minStockLevel}">5</td>
+                            <td class="text-center fw-bold fs-6">
+                                <span th:text="${product.quantity}">10</span>
+                                <small class="text-muted ms-1" style="font-size:0.75rem;">units</small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge"
+                                      th:classappend="${product.isOutOfStock()} ? 'bg-danger' : (${product.isLowStock()} ? 'bg-warning text-dark' : 'bg-success')"
+                                      th:text="${product.isOutOfStock()} ? 'Out of Stock' : (${product.isLowStock()} ? 'Low Stock' : 'In Stock')">
+                                    In Stock
+                                </span>
+                            </td>
+                            <td class="text-center" th:if="${@rbac.has('STOCK_ADJUST')}">
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#adjustModal"
+                                        th:data-id="${product.id}"
+                                        th:data-name="${product.name}"
+                                        th:data-current="${product.quantity}">
+                                    <i class="bi bi-sliders"></i> Quick Adjust
+                                </button>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(products)}">
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox fs-3 d-block mb-1"></i>
+                                No products found matching your search or filter.
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <!-- Stock Table -->
-        <div class="table-custom">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead>
-                    <tr>
-                        <th>Code</th>
-                        <th>Product & Brand</th>
-                        <th>Category</th>
-                        <th class="text-center">Min Level</th>
-                        <th class="text-center">Current Stock</th>
-                        <th class="text-center">Stock Health</th>
-                        <th class="text-center">Quick Adjust</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="product : ${products}">
-                        <td class="font-monospace fw-bold text-primary" th:text="${product.productCode}">MOB-001</td>
-                        <td>
-                            <div class="fw-semibold text-dark" th:text="${product.name}">Product Name</div>
-                            <small class="text-muted" th:text="${product.brand} + ' • ' + (${product.model} ?: '')">Apple • 256GB</small>
-                        </td>
-                        <td class="small text-secondary" th:text="${product.category.displayName}">Category</td>
-                        <td class="text-center text-muted" th:text="${product.minStockLevel}">5</td>
-                        <td class="text-center fw-bold fs-6" th:text="${product.quantity}">10</td>
-                        <td class="text-center">
-                            <span class="badge"
-                                  th:classappend="${product.isOutOfStock()} ? 'bg-danger' : (${product.isLowStock()} ? 'bg-warning text-dark' : 'bg-success')"
-                                  th:text="${product.isOutOfStock()} ? 'Out of Stock' : (${product.isLowStock()} ? 'Low Stock' : 'Optimal')">
-                                Optimal
+        <!-- =====================================================================
+             SECTION B: LOW STOCK PRODUCTS (Quantity <= MinStockLevel)
+             ===================================================================== -->
+        <div th:if="${activeTab == 'low-stock'}">
+            <div class="alert alert-warning d-flex align-items-center justify-content-between mb-4">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-exclamation-triangle-fill fs-5 text-warning"></i>
+                    <div>
+                        <strong>Low Stock Restock Advisory:</strong>
+                        <span th:text="${lowStockCount} + ' product(s) have reached or fallen below minimum threshold. Place replenishment orders to avoid counter stockouts.'">Alert text</span>
+                    </div>
+                </div>
+                <a th:if="${@rbac.has('PURCHASE_CREATE')}" th:href="@{/purchases/new}" class="btn btn-warning btn-sm fw-semibold shadow-sm text-nowrap">
+                    <i class="bi bi-cart-plus me-1"></i> Place Purchase Order
+                </a>
+            </div>
+
+            <div class="table-custom">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th>SKU / Code</th>
+                            <th>Product Name</th>
+                            <th>Category</th>
+                            <th class="text-center">Current Qty</th>
+                            <th class="text-center">Min Threshold</th>
+                            <th class="text-center">Required Restock</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="product : ${lowStockProducts}">
+                            <td class="font-monospace fw-bold text-primary" th:text="${product.productCode}">MOB-001</td>
+                            <td>
+                                <div class="fw-semibold text-dark" th:text="${product.name}">Product</div>
+                                <small class="text-muted" th:text="${product.brand}">Brand</small>
+                            </td>
+                            <td class="small" th:text="${product.category.displayName}">Category</td>
+                            <td class="text-center fw-bold text-danger fs-6" th:text="${product.quantity}">2</td>
+                            <td class="text-center text-muted" th:text="${product.minStockLevel}">5</td>
+                            <td class="text-center">
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-semibold">
+                                    +<span th:text="${product.minStockLevel - product.quantity + 5}">8</span> units recommended
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-warning text-dark">Low Stock</span>
+                            </td>
+                            <td class="text-end">
+                                <div class="d-inline-flex gap-2">
+                                    <a th:if="${@rbac.has('PURCHASE_CREATE')}" th:href="@{/purchases/new}" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-cart-plus me-1"></i>Reorder
+                                    </a>
+                                    <button th:if="${@rbac.has('STOCK_ADJUST')}"
+                                            type="button" class="btn btn-sm btn-outline-secondary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#adjustModal"
+                                            th:data-id="${product.id}"
+                                            th:data-name="${product.name}"
+                                            th:data-current="${product.quantity}">
+                                        <i class="bi bi-sliders"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(lowStockProducts)}">
+                            <td colspan="8" class="text-center py-5 text-success">
+                                <i class="bi bi-check-circle-fill fs-2 d-block mb-2 text-success"></i>
+                                <span class="fw-semibold fs-6">Excellent! All products are stocked well above minimum thresholds.</span>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- =====================================================================
+             SECTION C: OUT OF STOCK PRODUCTS (Quantity == 0)
+             ===================================================================== -->
+        <div th:if="${activeTab == 'out-of-stock'}">
+            <div class="alert alert-danger d-flex align-items-center justify-content-between mb-4">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-x-circle-fill fs-5 text-danger"></i>
+                    <div>
+                        <strong>Out of Stock Alert:</strong>
+                        <span th:text="${outOfStockCount} + ' catalog items currently have zero available units in the showroom.'">0 items</span>
+                    </div>
+                </div>
+                <a th:if="${@rbac.has('PURCHASE_CREATE')}" th:href="@{/purchases/new}" class="btn btn-danger btn-sm fw-semibold shadow-sm">
+                    <i class="bi bi-cart-plus me-1"></i> Restock Immediately
+                </a>
+            </div>
+
+            <div class="table-custom">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th>SKU / Code</th>
+                            <th>Product Name</th>
+                            <th>Category</th>
+                            <th class="text-center">Current Stock</th>
+                            <th class="text-center">Min Threshold</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="product : ${outOfStockProducts}">
+                            <td class="font-monospace fw-bold text-primary" th:text="${product.productCode}">MOB-001</td>
+                            <td>
+                                <div class="fw-semibold text-dark" th:text="${product.name}">Product</div>
+                                <small class="text-muted" th:text="${product.brand}">Brand</small>
+                            </td>
+                            <td class="small" th:text="${product.category.displayName}">Category</td>
+                            <td class="text-center fw-bold text-danger fs-6">0</td>
+                            <td class="text-center text-muted" th:text="${product.minStockLevel}">5</td>
+                            <td class="text-center">
+                                <span class="badge bg-danger">Out of Stock</span>
+                            </td>
+                            <td class="text-end">
+                                <div class="d-inline-flex gap-2">
+                                    <a th:if="${@rbac.has('PURCHASE_CREATE')}" th:href="@{/purchases/new}" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-cart-plus me-1"></i>Restock
+                                    </a>
+                                    <button th:if="${@rbac.has('STOCK_ADJUST')}"
+                                            type="button" class="btn btn-sm btn-outline-secondary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#adjustModal"
+                                            th:data-id="${product.id}"
+                                            th:data-name="${product.name}"
+                                            th:data-current="${product.quantity}">
+                                        <i class="bi bi-sliders"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(outOfStockProducts)}">
+                            <td colspan="7" class="text-center py-5 text-success">
+                                <i class="bi bi-check2-all fs-2 d-block mb-2 text-success"></i>
+                                <span class="fw-semibold fs-6">Great job! There are currently zero out-of-stock items in the catalog.</span>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- =====================================================================
+             SECTION D: STOCK MOVEMENT AUDIT TRAIL
+             ===================================================================== -->
+        <div th:if="${activeTab == 'movements'}">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-clock-history text-primary me-2"></i>Complete Inventory In / Out Audit Log
+                </h6>
+                <span class="text-muted small" th:text="${movementCount} + ' total transactions recorded'">0 transactions</span>
+            </div>
+
+            <div class="table-custom">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th>Date &amp; Time</th>
+                            <th>Product &amp; SKU</th>
+                            <th>Movement Type</th>
+                            <th class="text-center">Quantity Delta</th>
+                            <th class="text-center">Stock Before &rarr; After</th>
+                            <th>Reference #</th>
+                            <th>Notes</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="m : ${movements}">
+                            <td class="small text-muted" th:text="${#temporals.format(m.createdAt, 'yyyy-MM-dd HH:mm:ss')}">2026-11-04 12:00:00</td>
+                            <td>
+                                <div class="fw-semibold text-dark" th:text="${m.product.name}">Product</div>
+                                <small class="text-muted font-monospace" th:text="${m.product.productCode}">MOB-001</small>
+                            </td>
+                            <td>
+                                <span class="badge"
+                                      th:classappend="${m.movementType.name() == 'PURCHASE_IN'} ? 'bg-success' : (${m.movementType.name() == 'SALE_OUT'} ? 'bg-primary' : 'bg-warning text-dark')"
+                                      th:text="${m.movementType.displayName}">Purchase</span>
+                            </td>
+                            <td class="text-center fw-bold"
+                                th:classappend="${m.quantity > 0} ? 'text-success' : 'text-danger'"
+                                th:text="${m.quantity > 0 ? '+' + m.quantity : m.quantity}">+5</td>
+                            <td class="text-center small">
+                                <span class="text-muted" th:text="${m.stockBefore}">10</span>
+                                <i class="bi bi-arrow-right mx-1 text-secondary"></i>
+                                <span class="fw-bold text-dark" th:text="${m.stockAfter}">15</span>
+                            </td>
+                            <td class="small font-monospace text-primary fw-semibold" th:text="${m.referenceNumber}">REF-001</td>
+                            <td class="small text-muted" th:text="${m.notes}">Stock change notes</td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(movements)}">
+                            <td colspan="7" class="text-center py-4 text-muted">No stock movements recorded yet.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- =====================================================================
+             SECTION E: SMART INVENTORY INTELLIGENCE (AI & Automated Diagnostics)
+             ===================================================================== -->
+        <div th:if="${activeTab == 'intelligence'}">
+            <div class="row g-4 mb-4">
+                <div class="col-xl-8">
+                    <div class="content-card mb-4">
+                        <div class="content-card-header">
+                            <h5 class="content-card-title d-flex align-items-center gap-2">
+                                <i class="bi bi-cpu-fill text-info"></i>
+                                <span>Automated Inventory &amp; Stock Intelligence</span>
+                            </h5>
+                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle">
+                                Real-Time Analytics
                             </span>
-                        </td>
-                        <td class="text-center">
-                            <button type="button" class="btn btn-sm btn-outline-secondary"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#adjustModal"
-                                    th:data-id="${product.id}"
-                                    th:data-name="${product.name}"
-                                    th:data-current="${product.quantity}">
-                                <i class="bi bi-sliders"></i> Adjust
-                            </button>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
+                        </div>
+                        <div class="p-3">
+                            <div class="row g-3">
+                                <div class="col-md-6" th:each="ins : ${intelligenceReport != null ? intelligenceReport.insights : #lists.emptyList()}">
+                                    <div class="p-3 rounded-3 border h-100" th:classappend="${ins.badgeClass}">
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <i class="bi fs-5" th:classappend="${ins.icon}"></i>
+                                            <strong th:text="${ins.title}">Insight Title</strong>
+                                        </div>
+                                        <p class="small mb-0" th:text="${ins.description}">Insight description</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-4">
+                    <div class="content-card">
+                        <div class="content-card-header">
+                            <h5 class="content-card-title d-flex align-items-center gap-2">
+                                <i class="bi bi-lightning-charge-fill text-warning"></i>
+                                <span>Restock Recommendations</span>
+                            </h5>
+                        </div>
+                        <div class="p-3">
+                            <div th:if="${lowStockCount > 0}">
+                                <div class="p-3 mb-3 rounded-3 bg-warning bg-opacity-10 border border-warning-subtle text-dark small"
+                                     th:each="p : ${lowStockProducts}">
+                                    <div class="fw-bold text-dark" th:text="${p.name}">Product</div>
+                                    <div class="text-muted mb-2">Current: <strong class="text-danger" th:text="${p.quantity}">2</strong> | Min: <span th:text="${p.minStockLevel}">5</span></div>
+                                    <a th:if="${@rbac.has('PURCHASE_CREATE')}" th:href="@{/purchases/new}" class="btn btn-sm btn-primary w-100">
+                                        <i class="bi bi-cart-plus me-1"></i>Create PO Now
+                                    </a>
+                                </div>
+                            </div>
+                            <div th:if="${lowStockCount == 0}" class="text-center py-4 text-muted small">
+                                <i class="bi bi-check-circle fs-3 text-success d-block mb-1"></i>
+                                All inventory levels optimal. No urgent replenishment required.
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+
     </div>
 </div>
 

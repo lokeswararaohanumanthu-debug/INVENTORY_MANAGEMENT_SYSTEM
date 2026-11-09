@@ -41,3 +41,12 @@ data/
 # OS generated files
 .DS_Store
 Thumbs.db
+.git - Copy/
+cookies.txt
+*.tmp
+
+# Exclude old generated project reports and report assets
+*.docx
+report_assets/
+SRM_AP_*
+

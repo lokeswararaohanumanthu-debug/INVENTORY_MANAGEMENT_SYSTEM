@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS & Billing Counter - MobileZone Pro</title>
+    <title>POS & Billing Counter - INVENTRA</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
-<body>
+<body class="pos-page">
 
 <div th:replace="~{fragments/sidebar :: sidebar}"></div>
 
@@ -18,225 +18,347 @@
     <div class="page-container">
         <div th:replace="~{fragments/alerts :: alerts}"></div>
 
-        <form th:action="@{/sales/save}" th:object="${sale}" method="post" id="billingForm">
+        <!-- POS & Billing Consolidated Module Navigation Tabs -->
+        <div class="module-nav-tabs-bar mb-4">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pb-2 border-bottom">
+                <div class="d-inline-flex p-1 rounded-3 module-nav-bar" role="tablist">
+                    <a th:href="@{/sales/billing}" 
+                       class="module-nav-tab active">
+                        <i class="bi bi-receipt me-1"></i>
+                        <span>Create New Bill</span>
+                    </a>
+                    <a th:if="${@rbac.hasAny('SALES_VIEW_ALL', 'SALES_VIEW_OWN')}" 
+                       th:href="@{/sales}" 
+                       class="module-nav-tab">
+                        <i class="bi bi-clock-history me-1"></i>
+                        <span>Sales Invoice History</span>
+                    </a>
+                </div>
+                <div class="text-muted small d-none d-md-flex align-items-center gap-2">
+                    <i class="bi bi-shield-check text-success"></i>
+                    <span>Live POS Terminal &bull; Barcode Scanner &bull; Instant Invoice Print</span>
+                </div>
+            </div>
+        </div>
+
+        <form th:action="@{/sales/save}" th:object="${sale}" method="post" id="billingForm" novalidate
+              th:attr="data-api-base=@{/sales/api/products}">
+
+            <div th:if="${#fields.hasErrors('items')}" class="alert alert-danger d-flex align-items-center gap-2 mb-4">
+                <i class="bi bi-exclamation-octagon-fill fs-5"></i>
+                <div th:errors="*{items}">At least one product must be added to the bill.</div>
+            </div>
+
             <div class="row g-4">
-                <!-- Left: Items & Cart -->
-                <div class="col-lg-8">
-                    <div class="content-card">
-                        <div class="content-card-header">
-                            <h5 class="content-card-title"><i class="bi bi-cart3 text-primary me-2"></i>Cart Items</h5>
-                            <button type="button" class="btn btn-outline-primary btn-sm" id="addItemBtn">
-                                <i class="bi bi-plus-circle me-1"></i> Add Another Item
+                <!-- ===================== LEFT: Add products + Cart ===================== -->
+                <div class="col-xl-8 col-lg-8">
+                    <div class="content-card pos-card">
+                        <div class="content-card-header pos-card-header">
+                            <h5 class="content-card-title d-flex align-items-center gap-2">
+                                <i class="bi bi-cart3 text-primary"></i>Cart Items
+                                <span class="badge rounded-pill pos-count-badge" id="cartCountBadge">0 items</span>
+                            </h5>
+                            <button type="button" class="btn pos-btn-add-row" id="addItemBtn">
+                                <i class="bi bi-plus-lg me-1"></i> Add Another Item
                             </button>
                         </div>
 
-                        <div class="table-responsive">
-                            <table class="table table-bordered align-middle bg-white" id="itemsTable">
-                                <thead class="table-light">
+                        <!-- Product selection methods -->
+                        <div class="pos-methods mb-3">
+                            <div class="pos-method-tabs" role="tablist">
+                                <button type="button" class="pos-method-tab" data-method="scan" role="tab">
+                                    <i class="bi bi-camera"></i>
+                                    <span class="pos-method-title">Scan Barcode</span>
+                                    <span class="pos-method-sub">Use device camera</span>
+                                </button>
+                                <button type="button" class="pos-method-tab" data-method="manual" role="tab">
+                                    <i class="bi bi-upc"></i>
+                                    <span class="pos-method-title">Enter Barcode</span>
+                                    <span class="pos-method-sub">Type or USB scanner</span>
+                                </button>
+                                <button type="button" class="pos-method-tab" data-method="search" role="tab">
+                                    <i class="bi bi-search"></i>
+                                    <span class="pos-method-title">Search Product</span>
+                                    <span class="pos-method-sub">By name, brand, code</span>
+                                </button>
+                            </div>
+
+                            <!-- Method 1: Camera scanner -->
+                            <div class="pos-method-pane" data-pane="scan">
+                                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                                    <button type="button" class="btn btn-primary pos-btn" id="startScanBtn">
+                                        <i class="bi bi-camera-video me-1"></i> Start Camera
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger pos-btn d-none" id="stopScanBtn">
+                                        <i class="bi bi-stop-circle me-1"></i> Stop &amp; Close Camera
+                                    </button>
+                                    <select class="form-select pos-camera-select d-none" id="cameraSelect" aria-label="Select camera"></select>
+                                </div>
+                                <div class="pos-scanner-wrap d-none" id="scannerWrap">
+                                    <div id="posReader"></div>
+                                </div>
+                                <div class="pos-scan-status" id="scanStatus">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Click <strong>Start Camera</strong> and hold the product barcode in front of the camera. Works with laptop webcams and mobile phone cameras.
+                                </div>
+                            </div>
+
+                            <!-- Method 2: Manual barcode entry -->
+                            <div class="pos-method-pane" data-pane="manual">
+                                <label for="manualBarcode" class="form-label pos-label">Barcode Number</label>
+                                <div class="input-group pos-input-group">
+                                    <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
+                                    <input type="text" id="manualBarcode" class="form-control" autocomplete="off" spellcheck="false" maxlength="50">
+                                    <button type="button" class="btn btn-primary px-4" id="manualBarcodeBtn">
+                                        <i class="bi bi-search me-1"></i> Find &amp; Add
+                                    </button>
+                                </div>
+                                <div class="form-text mt-2">
+                                    Press <kbd>Enter</kbd> to add to the Cart Items Table below. USB / Bluetooth barcode scanners also scan directly into this field.
+                                </div>
+                            </div>
+
+                            <!-- Method 3: Product search -->
+                            <div class="pos-method-pane" data-pane="search">
+                                <label for="productSearch" class="form-label pos-label">Search Product</label>
+                                <div class="pos-search-box">
+                                    <div class="input-group pos-input-group">
+                                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                        <input type="text" id="productSearch" class="form-control" autocomplete="off" spellcheck="false"
+                                               role="combobox" aria-expanded="false" aria-controls="searchResults">
+                                        <button type="button" class="btn btn-outline-secondary d-none" id="clearSearchBtn" title="Clear">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </div>
+                                    <div class="pos-search-results d-none" id="searchResults" role="listbox"></div>
+                                </div>
+                                <div class="form-text mt-2">Search by product name, brand, model, product code or barcode. Use <kbd>↑</kbd> <kbd>↓</kbd> and <kbd>Enter</kbd> to select and add to the Cart Items Table.</div>
+                            </div>
+                        </div>
+
+                        <!-- Feedback messages -->
+                        <div id="posFeedback" class="pos-feedback" aria-live="polite"></div>
+
+                        <!-- Cart Items Table Section -->
+                        <div class="pos-cart-section-bar d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="pos-cart-section-title">
+                                    <i class="bi bi-bag-check text-primary me-1"></i>Selected Cart Items
+                                </span>
+                                <span class="text-muted small d-none d-sm-inline">— All scanned, entered &amp; searched products appear here</span>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-link text-danger text-decoration-none p-0 d-none" id="clearCartBtn">
+                                <i class="bi bi-x-circle me-1"></i>Clear Cart
+                            </button>
+                        </div>
+
+                        <div class="table-responsive pos-cart-wrap">
+                            <table class="table align-middle mb-0 pos-cart-table" id="itemsTable">
+                                <thead>
                                 <tr>
-                                    <th style="width: 45%;">Product <span class="text-danger">*</span></th>
-                                    <th style="width: 15%;">Qty <span class="text-danger">*</span></th>
-                                    <th style="width: 18%;">Unit Price (₹)</th>
-                                    <th style="width: 17%;" class="text-end">Total (₹)</th>
-                                    <th style="width: 5%;" class="text-center">Action</th>
+                                    <th class="pos-col-product">Product Name <span class="text-danger">*</span></th>
+                                    <th class="pos-col-qty text-center">Quantity <span class="text-danger">*</span></th>
+                                    <th class="pos-col-price">Unit Price (₹)</th>
+                                    <th class="pos-col-total text-end">Total Amount (₹)</th>
+                                    <th class="pos-col-action text-center">Action</th>
                                 </tr>
                                 </thead>
                                 <tbody id="itemsBody">
                                 <tr class="item-row" th:each="item, stat : *{items}">
-                                    <td>
+                                    <td class="pos-col-product" data-label="Product Name">
                                         <select th:field="*{items[__${stat.index}__].productId}" class="form-select product-select" required onchange="handleProductSelect(this)">
                                             <option value="">-- Choose Product --</option>
                                             <option th:each="p : ${products}"
                                                     th:value="${p.id}"
+                                                    th:data-name="${p.name}"
+                                                    th:data-brand="${p.brand}"
+                                                    th:data-model="${p.model}"
                                                     th:data-price="${p.sellingPrice}"
                                                     th:data-stock="${p.quantity}"
+                                                    th:data-code="${p.productCode}"
+                                                    th:data-barcode="${p.barcode}"
                                                     th:text="${p.name} + ' (' + ${p.brand} + ') - Stock: ' + ${p.quantity}"></option>
                                         </select>
-                                        <div class="small text-muted stock-indicator mt-1"></div>
+                                        <div class="stock-indicator"></div>
                                     </td>
-                                    <td>
-                                        <input type="number" min="1" th:field="*{items[__${stat.index}__].quantity}" class="form-control qty-input" value="1" required oninput="calculateRow(this)">
+                                    <td class="pos-col-qty" data-label="Quantity">
+                                        <div class="pos-qty-control mx-auto">
+                                            <button type="button" class="pos-qty-btn pos-qty-minus" onclick="stepQty(this, -1)" title="Decrease quantity" aria-label="Decrease quantity">
+                                                <i class="bi bi-dash-lg"></i>
+                                            </button>
+                                            <input type="number" min="1" th:field="*{items[__${stat.index}__].quantity}" class="form-control qty-input" required oninput="calculateRow(this)" onchange="clampQty(this)">
+                                            <button type="button" class="pos-qty-btn pos-qty-plus" onclick="stepQty(this, 1)" title="Increase quantity" aria-label="Increase quantity">
+                                                <i class="bi bi-plus-lg"></i>
+                                            </button>
+                                        </div>
                                     </td>
-                                    <td>
-                                        <input type="number" step="0.01" min="0.01" th:field="*{items[__${stat.index}__].unitPrice}" class="form-control price-input" placeholder="0.00" required oninput="calculateRow(this)">
+                                    <td class="pos-col-price" data-label="Unit Price (₹)">
+                                        <div class="input-group pos-price-group">
+                                            <span class="input-group-text">₹</span>
+                                            <input type="number" step="0.01" min="0.01" th:field="*{items[__${stat.index}__].unitPrice}" class="form-control price-input" placeholder="0.00" required oninput="calculateRow(this)">
+                                        </div>
                                     </td>
-                                    <td class="text-end fw-bold align-middle item-total">₹0.00</td>
-                                    <td class="text-center align-middle">
-                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRow(this)">
-                                            <i class="bi bi-trash"></i>
+                                    <td class="pos-col-total text-end" data-label="Total Amount (₹)">
+                                        <span class="item-total-badge item-total">₹0</span>
+                                    </td>
+                                    <td class="pos-col-action text-center" data-label="Action">
+                                        <button type="button" class="btn pos-btn-delete" onclick="removeRow(this)" title="Remove Product" aria-label="Remove Product">
+                                            <i class="bi bi-trash3"></i>
                                         </button>
                                     </td>
                                 </tr>
                                 </tbody>
+                                <tfoot>
+                                <tr class="pos-cart-tfoot">
+                                    <td colspan="3" class="text-muted small">
+                                        <i class="bi bi-Layers me-1"></i>
+                                        <span id="tableSummaryText">No products selected yet — scan, enter barcode, search, or choose a product above.</span>
+                                    </td>
+                                    <td class="text-end fw-bold text-nowrap">
+                                        <span class="text-muted small fw-semibold me-1">Subtotal:</span>
+                                        <span class="pos-table-subtotal" id="tableSubtotalDisplay">₹0</span>
+                                    </td>
+                                    <td></td>
+                                </tr>
+                                </tfoot>
                             </table>
                         </div>
                     </div>
                 </div>
 
-                <!-- Right: Customer, Payment & Checkout summary -->
-                <div class="col-lg-4">
-                    <div class="content-card">
-                        <div class="content-card-header">
-                            <h5 class="content-card-title"><i class="bi bi-wallet2 text-success me-2"></i>Customer & Payment</h5>
+                <!-- ===================== RIGHT: Customer, Payment & Checkout ===================== -->
+                <div class="col-xl-4 col-lg-4">
+                    <div class="content-card pos-card pos-summary-sticky">
+                        <div class="content-card-header pos-card-header">
+                            <h5 class="content-card-title"><i class="bi bi-wallet2 text-success me-2"></i>Customer &amp; Payment</h5>
                         </div>
 
                         <!-- Customer Name -->
                         <div class="mb-3">
-                            <label for="customerName" class="form-label small fw-semibold">Customer Name</label>
-                            <input type="text" id="customerName" th:field="*{customerName}" class="form-control" placeholder="Walk-in Customer">
+                            <label for="customerName" class="form-label pos-label">Customer Name</label>
+                            <div class="input-group pos-input-group">
+                                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                <input type="text" id="customerName" th:field="*{customerName}" class="form-control" autocomplete="off" maxlength="100">
+                            </div>
                         </div>
 
                         <!-- Customer Phone -->
                         <div class="mb-3">
-                            <label for="customerPhone" class="form-label small fw-semibold">Phone Number</label>
-                            <input type="tel" id="customerPhone" th:field="*{customerPhone}" class="form-control" placeholder="e.g. 9876543210">
+                            <label for="customerPhone" class="form-label pos-label">Phone Number</label>
+                            <div class="input-group pos-input-group">
+                                <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                                <input type="tel" id="customerPhone" th:field="*{customerPhone}" class="form-control" inputmode="tel" autocomplete="off" maxlength="15">
+                            </div>
                         </div>
 
-                        <!-- Payment Method -->
+                        <!-- Payment Method (no default selection) -->
                         <div class="mb-3">
-                            <label for="paymentMethod" class="form-label small fw-semibold">Payment Mode</label>
-                            <select id="paymentMethod" th:field="*{paymentMethod}" class="form-select">
-                                <option value="CASH">Cash</option>
-                                <option value="CARD">Debit / Credit Card</option>
-                                <option value="UPI">UPI / QR Code</option>
-                                <option value="NET_BANKING">Net Banking</option>
-                            </select>
+                            <label for="paymentMethod" class="form-label pos-label">Payment Mode <span class="text-danger">*</span></label>
+                            <div class="input-group pos-input-group has-validation">
+                                <span class="input-group-text"><i class="bi bi-credit-card-2-front"></i></span>
+                                <select id="paymentMethod" name="paymentMethod" class="form-select" required
+                                        th:classappend="${#fields.hasErrors('paymentMethod')} ? 'is-invalid' : ''">
+                                    <option value="" disabled th:selected="${#strings.isEmpty(sale.paymentMethod)}">Select Payment Mode</option>
+                                    <option value="CASH" th:selected="${sale.paymentMethod == 'CASH'}">Cash</option>
+                                    <option value="UPI" th:selected="${sale.paymentMethod == 'UPI'}">UPI</option>
+                                    <option value="CARD" th:selected="${sale.paymentMethod == 'CARD'}">Credit / Debit Card</option>
+                                    <option value="BANK_TRANSFER" th:selected="${sale.paymentMethod == 'BANK_TRANSFER'}">Bank Transfer</option>
+                                    <option value="OTHER" th:selected="${sale.paymentMethod == 'OTHER'}">Other</option>
+                                </select>
+                                <div class="invalid-feedback">Please select a payment mode.</div>
+                            </div>
                         </div>
-
-                        <hr>
 
                         <!-- Financial Summary Box -->
-                        <div class="bg-light p-3 rounded-3 mb-3">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="text-muted">Subtotal:</span>
-                                <span class="fw-bold" id="subtotalDisplay">₹0.00</span>
+                        <div class="pos-summary">
+                            <div class="pos-summary-row">
+                                <span>Items / Units</span>
+                                <span class="fw-semibold" id="itemsUnitsDisplay">0 / 0</span>
                             </div>
-
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="text-muted">Discount (₹):</span>
-                                <input type="number" step="0.01" min="0" id="discountInput" th:field="*{discount}"
-                                       class="form-control form-control-sm text-end" style="width: 120px;"
-                                       value="0.00" oninput="updateGrandTotal()">
+                            <div class="pos-summary-row">
+                                <span>Subtotal</span>
+                                <span class="fw-bold" id="subtotalDisplay">₹0</span>
                             </div>
-
-                            <div class="border-top pt-2 mt-2 d-flex justify-content-between align-items-center">
-                                <span class="fw-bold fs-6">Net Payable:</span>
-                                <span class="fw-bold fs-4 text-success" id="netAmountDisplay">₹0.00</span>
+                            <div class="pos-summary-row align-items-center">
+                                <label for="discountInput" class="mb-0">Discount</label>
+                                <div class="input-group input-group-sm pos-discount-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" step="0.01" min="0" id="discountInput" th:field="*{discount}"
+                                           class="form-control text-end" oninput="updateGrandTotal()">
+                                </div>
+                            </div>
+                            <div class="pos-net-payable">
+                                <span class="pos-net-label">Net Payable</span>
+                                <span class="pos-net-value" id="netAmountDisplay">₹0</span>
                             </div>
                         </div>
 
                         <!-- Bill Notes -->
                         <div class="mb-3">
-                            <label for="notes" class="form-label small text-muted">Notes / Warranty Remarks</label>
-                            <input type="text" id="notes" th:field="*{notes}" class="form-control form-control-sm" placeholder="e.g. 1 Year Brand Warranty">
+                            <label for="notes" class="form-label pos-label">Notes / Warranty Remarks</label>
+                            <input type="text" id="notes" th:field="*{notes}" class="form-control pos-input" autocomplete="off" maxlength="500">
                         </div>
 
-                        <button type="submit" class="btn btn-success w-100 py-2 fs-6 fw-bold shadow">
-                            <i class="bi bi-printer me-1"></i> Complete Sale & Generate Bill
+                        <button type="submit" class="btn pos-btn-checkout w-100" id="checkoutBtn">
+                            <i class="bi bi-printer me-2"></i> Complete Sale &amp; Generate Bill
                         </button>
                     </div>
                 </div>
             </div>
         </form>
+
+        <!-- Row template used when items are added via barcode / search / Add Another Item -->
+        <template id="itemRowTemplate">
+            <tr class="item-row">
+                <td class="pos-col-product" data-label="Product Name">
+                    <select class="form-select product-select" required onchange="handleProductSelect(this)">
+                        <option value="">-- Choose Product --</option>
+                        <option th:each="p : ${products}"
+                                th:value="${p.id}"
+                                th:data-name="${p.name}"
+                                th:data-brand="${p.brand}"
+                                th:data-model="${p.model}"
+                                th:data-price="${p.sellingPrice}"
+                                th:data-stock="${p.quantity}"
+                                th:data-code="${p.productCode}"
+                                th:data-barcode="${p.barcode}"
+                                th:text="${p.name} + ' (' + ${p.brand} + ') - Stock: ' + ${p.quantity}"></option>
+                    </select>
+                    <div class="stock-indicator"></div>
+                </td>
+                <td class="pos-col-qty" data-label="Quantity">
+                    <div class="pos-qty-control mx-auto">
+                        <button type="button" class="pos-qty-btn pos-qty-minus" onclick="stepQty(this, -1)" title="Decrease quantity" aria-label="Decrease quantity">
+                            <i class="bi bi-dash-lg"></i>
+                        </button>
+                        <input type="number" min="1" value="1" class="form-control qty-input" required oninput="calculateRow(this)" onchange="clampQty(this)">
+                        <button type="button" class="pos-qty-btn pos-qty-plus" onclick="stepQty(this, 1)" title="Increase quantity" aria-label="Increase quantity">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
+                    </div>
+                </td>
+                <td class="pos-col-price" data-label="Unit Price (₹)">
+                    <div class="input-group pos-price-group">
+                        <span class="input-group-text">₹</span>
+                        <input type="number" step="0.01" min="0.01" class="form-control price-input" placeholder="0.00" required oninput="calculateRow(this)">
+                    </div>
+                </td>
+                <td class="pos-col-total text-end" data-label="Total Amount (₹)">
+                    <span class="item-total-badge item-total">₹0</span>
+                </td>
+                <td class="pos-col-action text-center" data-label="Action">
+                    <button type="button" class="btn pos-btn-delete" onclick="removeRow(this)" title="Remove Product" aria-label="Remove Product">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </td>
+            </tr>
+        </template>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    function handleProductSelect(selectElem) {
-        const selected = selectElem.options[selectElem.selectedIndex];
-        const price = selected.getAttribute('data-price');
-        const stock = selected.getAttribute('data-stock');
-        const row = selectElem.closest('.item-row');
-        const priceInput = row.querySelector('.price-input');
-        const qtyInput = row.querySelector('.qty-input');
-        const indicator = row.querySelector('.stock-indicator');
-
-        if (price) {
-            priceInput.value = price;
-        }
-
-        if (stock) {
-            const stockNum = parseInt(stock);
-            if (stockNum <= 0) {
-                indicator.innerHTML = '<span class="text-danger fw-bold"><i class="bi bi-x-circle"></i> Out of stock!</span>';
-                qtyInput.max = 0;
-            } else {
-                indicator.innerHTML = `<span class="text-muted"><i class="bi bi-info-circle"></i> Available Stock: <strong>${stockNum}</strong></span>`;
-                qtyInput.max = stockNum;
-            }
-        } else {
-            indicator.innerHTML = '';
-        }
-
-        calculateRow(priceInput);
-    }
-
-    function calculateRow(inputElem) {
-        const row = inputElem.closest('.item-row');
-        const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
-        const price = parseFloat(row.querySelector('.price-input').value) || 0;
-        const total = qty * price;
-        row.querySelector('.item-total').textContent = '₹' + total.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        updateGrandTotal();
-    }
-
-    function updateGrandTotal() {
-        let subtotal = 0;
-        document.querySelectorAll('.item-row').forEach(row => {
-            const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
-            const price = parseFloat(row.querySelector('.price-input').value) || 0;
-            subtotal += (qty * price);
-        });
-
-        const discount = parseFloat(document.getElementById('discountInput').value) || 0;
-        let net = subtotal - discount;
-        if (net < 0) net = 0;
-
-        document.getElementById('subtotalDisplay').textContent = '₹' + subtotal.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        document.getElementById('netAmountDisplay').textContent = '₹' + net.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    }
-
-    function removeRow(btn) {
-        const rows = document.querySelectorAll('.item-row');
-        if (rows.length > 1) {
-            btn.closest('.item-row').remove();
-            reindexRows();
-            updateGrandTotal();
-        } else {
-            alert('At least one item is required in the bill.');
-        }
-    }
-
-    function reindexRows() {
-        document.querySelectorAll('.item-row').forEach((row, index) => {
-            row.querySelector('.product-select').name = `items[${index}].productId`;
-            row.querySelector('.qty-input').name = `items[${index}].quantity`;
-            row.querySelector('.price-input').name = `items[${index}].unitPrice`;
-        });
-    }
-
-    document.getElementById('addItemBtn').addEventListener('click', function () {
-        const tbody = document.getElementById('itemsBody');
-        const firstRow = tbody.querySelector('.item-row');
-        const newRow = firstRow.cloneNode(true);
-
-        newRow.querySelector('.product-select').selectedIndex = 0;
-        newRow.querySelector('.stock-indicator').innerHTML = '';
-        newRow.querySelector('.qty-input').value = '1';
-        newRow.querySelector('.price-input').value = '';
-        newRow.querySelector('.item-total').textContent = '₹0.00';
-
-        tbody.appendChild(newRow);
-        reindexRows();
-    });
-
-    document.addEventListener("DOMContentLoaded", function () {
-        document.querySelectorAll('.item-row').forEach(row => {
-            const input = row.querySelector('.qty-input');
-            if (input) calculateRow(input);
-        });
-    });
-</script>
+<script th:src="@{/js/vendor/html5-qrcode.min.js}"></script>
+<script th:src="@{/js/app.js}"></script>
+<script th:src="@{/js/pos-billing.js}"></script>
 </body>
 </html>

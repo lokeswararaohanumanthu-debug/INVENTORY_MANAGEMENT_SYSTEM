@@ -44,15 +44,17 @@ public class ExpenseController {
             totalAmount = expenseService.getTotalExpensesBetween(start, end);
         } else {
             expenses = expenseService.getAllExpenses();
-            YearMonth ym = YearMonth.now();
-            totalAmount = expenseService.getTotalExpensesBetween(ym.atDay(1), ym.atEndOfMonth());
+            totalAmount = expenses.stream()
+                    .map(e -> e.getAmount() != null ? e.getAmount() : BigDecimal.ZERO)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
         }
 
         model.addAttribute("expenses", expenses);
         model.addAttribute("totalAmount", totalAmount != null ? totalAmount : BigDecimal.ZERO);
         model.addAttribute("categories", ExpenseCategory.values());
-        model.addAttribute("currentMonth", month != null ? month : YearMonth.now().getMonthValue());
-        model.addAttribute("currentYear", year != null ? year : YearMonth.now().getYear());
+        YearMonth nowYm = YearMonth.now(com.showroom.inventory.service.SaleService.IST_ZONE);
+        model.addAttribute("currentMonth", month != null ? month : nowYm.getMonthValue());
+        model.addAttribute("currentYear", year != null ? year : nowYm.getYear());
         model.addAttribute("activeNav", "expenses");
         return "expenses/list";
     }

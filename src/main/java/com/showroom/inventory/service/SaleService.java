@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -32,41 +34,56 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 public class SaleService {
 
+    public static final ZoneId IST_ZONE = ZoneId.of("Asia/Kolkata");
+
     private final SaleRepository saleRepository;
     private final SaleItemRepository saleItemRepository;
     private final ProductRepository productRepository;
     private final InventoryService inventoryService;
+    private final ActivityLogService activityLogService;
 
     public SaleService(SaleRepository saleRepository,
                        SaleItemRepository saleItemRepository,
                        ProductRepository productRepository,
-                       InventoryService inventoryService) {
+                       InventoryService inventoryService,
+                       ActivityLogService activityLogService) {
         this.saleRepository = saleRepository;
         this.saleItemRepository = saleItemRepository;
         this.productRepository = productRepository;
         this.inventoryService = inventoryService;
+        this.activityLogService = activityLogService;
     }
 
+    @Transactional(readOnly = true)
     public List<Sale> getAllSales() {
-        return saleRepository.findAllByOrderByCreatedAtDesc();
+        return saleRepository.findAllWithDetails();
     }
 
+    @Transactional(readOnly = true)
+    public List<Sale> getSalesBetween(LocalDate start, LocalDate end) {
+        return saleRepository.findBySaleDateBetweenWithDetails(start, end);
+    }
+
+    @Transactional(readOnly = true)
     public List<Sale> getRecentSales(int limit) {
         return saleRepository.findRecentSales(PageRequest.of(0, limit));
     }
 
+    @Transactional(readOnly = true)
     public Sale getSaleById(Long id) {
-        return saleRepository.findById(id)
+        return saleRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sale", "id", id));
     }
 
+    @Transactional(readOnly = true)
     public Sale getSaleByBillNumber(String billNumber) {
         return saleRepository.findByBillNumber(billNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("Sale", "billNumber", billNumber));
     }
 
+    @Transactional(readOnly = true)
     public BigDecimal getTodaySalesTotal() {
-        return saleRepository.sumNetAmountByDate(LocalDate.now());
+        return saleRepository.sumNetAmountByDate(LocalDate.now(IST_ZONE));
     }
 
     public BigDecimal getMonthlyRevenue(LocalDate start, LocalDate end) {
@@ -96,13 +113,17 @@ public class SaleService {
             }
         }
 
-        // Step 2: Prepare Sale entity
-        String billNumber = generateUniqueBillNumber();
+        // Step 2: Prepare Sale entity with permanent Asia/Kolkata transaction date & timestamp
+        LocalDateTime nowIst = LocalDateTime.now(IST_ZONE);
+        LocalDate actualSaleDate = dto.getSaleDate() != null ? dto.getSaleDate() : nowIst.toLocalDate();
+        String billNumber = generateUniqueBillNumber(actualSaleDate);
+
         Sale sale = new Sale();
         sale.setBillNumber(billNumber);
         sale.setCustomerName(dto.getCustomerName() != null && !dto.getCustomerName().trim().isEmpty() ? dto.getCustomerName().trim() : "Walk-in Customer");
         sale.setCustomerPhone(dto.getCustomerPhone());
-        sale.setSaleDate(dto.getSaleDate() != null ? dto.getSaleDate() : LocalDate.now());
+        sale.setSaleDate(actualSaleDate);
+        sale.setCreatedAt(nowIst);
         sale.setPaymentMethod(dto.getPaymentMethod() != null ? dto.getPaymentMethod() : "CASH");
         sale.setNotes(dto.getNotes());
         sale.setDiscount(dto.getDiscount() != null ? dto.getDiscount() : BigDecimal.ZERO);
@@ -135,11 +156,26 @@ public class SaleService {
         BigDecimal net = subtotal.subtract(sale.getDiscount());
         sale.setNetAmount(net.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : net);
 
-        return saleRepository.save(sale);
+        com.showroom.inventory.entity.User currentUser = activityLogService.getCurrentAuthenticatedUser();
+        if (currentUser != null) {
+            sale.setCreatedBy(currentUser.getUsername());
+            sale.setCreatedByName(currentUser.getFullName());
+        }
+
+        Sale saved = saleRepository.save(sale);
+        activityLogService.logCurrentUserAction(
+                "CREATE_SALE",
+                "SALES_POS",
+                "Generated sales invoice " + saved.getBillNumber() + " for customer '" + saved.getCustomerName() + "'",
+                "None",
+                "Bill: " + saved.getBillNumber() + ", Net Paid: ₹" + saved.getNetAmount() + ", Payment: " + saved.getPaymentMethod()
+        );
+        return saved;
     }
 
-    private String generateUniqueBillNumber() {
-        String dateStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+    private String generateUniqueBillNumber(LocalDate saleDate) {
+        LocalDate targetDate = saleDate != null ? saleDate : LocalDate.now(IST_ZONE);
+        String dateStr = targetDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String billNum;
         do {
             int randomSuffix = ThreadLocalRandom.current().nextInt(1000, 9999);

@@ -22,7 +22,7 @@ public class PurchaseDTO {
 
     @NotNull(message = "Purchase date is required")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate purchaseDate = LocalDate.now();
+    private LocalDate purchaseDate = LocalDate.now(java.time.ZoneId.of("Asia/Kolkata"));
 
     private String notes;
 

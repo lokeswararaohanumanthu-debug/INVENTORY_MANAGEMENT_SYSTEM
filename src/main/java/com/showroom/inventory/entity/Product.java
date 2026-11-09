@@ -36,6 +36,14 @@ public class Product {
     @Column(unique = true, nullable = false, length = 20)
     private String productCode;
 
+    /**
+     * Optional manufacturer barcode printed on the product box (EAN-13, UPC-A, Code-128, etc.).
+     * Used by the POS billing counter to identify products via camera scan or manual entry.
+     * unique = true — Two products can never share the same barcode (NULLs are allowed for many rows).
+     */
+    @Column(unique = true, length = 50)
+    private String barcode;
+
     /** Product name — e.g., "Samsung Galaxy S24 Ultra" */
     @Column(nullable = false, length = 100)
     private String name;
@@ -226,6 +234,14 @@ public class Product {
         this.productCode = productCode;
     }
 
+    public String getBarcode() {
+        return barcode;
+    }
+
+    public void setBarcode(String barcode) {
+        this.barcode = barcode;
+    }
+
     public String getName() {
         return name;
     }
@@ -356,6 +372,7 @@ public class Product {
         return "Product{" +
                 "id=" + id +
                 ", productCode='" + productCode + '\'' +
+                ", barcode='" + barcode + '\'' +
                 ", name='" + name + '\'' +
                 ", brand='" + brand + '\'' +
                 ", model='" + model + '\'' +

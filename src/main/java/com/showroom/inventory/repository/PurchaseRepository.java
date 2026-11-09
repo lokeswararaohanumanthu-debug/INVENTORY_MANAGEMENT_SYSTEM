@@ -37,6 +37,37 @@ public interface PurchaseRepository extends JpaRepository<Purchase, Long> {
     List<Purchase> findAllByOrderByCreatedAtDesc();
 
     /**
+     * Fetch all purchases eagerly with supplier, items, and products ordered by purchase date descending.
+     */
+    @Query("SELECT DISTINCT p FROM Purchase p " +
+           "LEFT JOIN FETCH p.supplier " +
+           "LEFT JOIN FETCH p.items i " +
+           "LEFT JOIN FETCH i.product " +
+           "ORDER BY p.purchaseDate DESC, p.createdAt DESC")
+    List<Purchase> findAllWithDetails();
+
+    /**
+     * Fetch purchases for a specific vendor/supplier eagerly with supplier, items, and products.
+     */
+    @Query("SELECT DISTINCT p FROM Purchase p " +
+           "LEFT JOIN FETCH p.supplier " +
+           "LEFT JOIN FETCH p.items i " +
+           "LEFT JOIN FETCH i.product " +
+           "WHERE p.supplier.id = :supplierId " +
+           "ORDER BY p.purchaseDate DESC, p.createdAt DESC")
+    List<Purchase> findBySupplierIdWithDetails(@Param("supplierId") Long supplierId);
+
+    /**
+     * Fetch a single purchase order by ID with its supplier, items, and products.
+     */
+    @Query("SELECT DISTINCT p FROM Purchase p " +
+           "LEFT JOIN FETCH p.supplier " +
+           "LEFT JOIN FETCH p.items i " +
+           "LEFT JOIN FETCH i.product " +
+           "WHERE p.id = :id")
+    Optional<Purchase> findByIdWithDetails(@Param("id") Long id);
+
+    /**
      * Find purchases within a specific date range.
      *
      * @param start the start date (inclusive)

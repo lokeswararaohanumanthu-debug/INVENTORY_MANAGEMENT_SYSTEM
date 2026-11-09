@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Audit Logs - INVENTRA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<div class="app-main">
+    <div th:replace="~{fragments/header :: header('Employee Activity & Security Audit Logs')}"></div>
+
+    <div class="page-container">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <!-- Audit Governance Header -->
+        <div class="content-card mb-4">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 pb-3 mb-3 border-bottom">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="metric-icon-box icon-blue" style="width: 42px; height: 42px; font-size: 1.2rem;">
+                        <i class="bi bi-journal-check"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold text-dark mb-0">
+                            Immutable Activity &amp; Change Audit Trail
+                            <span class="badge bg-success-subtle text-success border border-success-subtle ms-2" style="font-size: 0.72rem;">
+                                <i class="bi bi-lock-fill me-1"></i>Read-Only Ledger
+                            </span>
+                        </h6>
+                        <small class="text-muted">
+                            Records Employee Name, User ID, Assigned Role, Action, Module, Timestamp, Previous Value, and Updated Value.
+                            (<strong th:text="${scopeDescription}">Scope</strong>)
+                        </small>
+                    </div>
+                </div>
+                <span class="badge bg-light text-dark border px-3 py-2">
+                    <strong th:text="${totalLogsCount}">0</strong> Logged Events
+                </span>
+            </div>
+
+            <form th:action="@{/activity-logs}" method="get" class="row g-2 align-items-center">
+                <div class="col-md-5">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="search" class="form-control"
+                               placeholder="Search by employee name, User ID, role, action, or details"
+                               th:value="${searchKeyword}">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select name="module" class="form-select" onchange="this.form.submit()">
+                        <option value="ALL">-- All Application Modules --</option>
+                        <option th:each="m : ${modules}"
+                                th:value="${m}"
+                                th:text="${m}"
+                                th:selected="${selectedModule == m}"></option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">Filter Logs</button>
+                    <a th:href="@{/activity-logs}" class="btn btn-outline-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Audit Logs Table -->
+        <div class="table-custom">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                    <tr>
+                        <th style="width: 13%;">Date &amp; Time</th>
+                        <th style="width: 16%;">Employee &amp; User ID</th>
+                        <th style="width: 12%;">Assigned Role</th>
+                        <th style="width: 11%;">Module</th>
+                        <th style="width: 13%;">Action Performed</th>
+                        <th style="width: 19%;">Details</th>
+                        <th style="width: 16%;">Previous &rarr; Updated Value</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="log : ${logs}">
+                        <td class="small text-muted font-monospace">
+                            <div class="fw-semibold text-dark" th:text="${#temporals.format(log.createdAt, 'yyyy-MM-dd')}">2026-11-04</div>
+                            <span th:text="${#temporals.format(log.createdAt, 'hh:mm:ss a')}">10:15:00 AM</span>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark" th:text="${log.employeeName}">Employee Name</div>
+                            <code class="small text-primary" th:text="'@' + ${log.username}">@superadmin</code>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border fw-semibold" th:text="${log.userRole}">Super Admin</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle"
+                                  th:text="${log.moduleAffected}">PRODUCTS</span>
+                        </td>
+                        <td>
+                            <span class="fw-bold small font-monospace text-dark" th:text="${log.actionPerformed}">PRODUCT_ADDED</span>
+                        </td>
+                        <td class="small text-secondary" th:text="${log.description}">Operation description</td>
+                        <td>
+                            <div th:if="${log.previousValue != null and log.previousValue != '-'}" class="mb-1">
+                                <span class="audit-diff-box audit-diff-prev" th:title="${log.previousValue}" th:text="'Prev: ' + ${log.previousValue}">Prev</span>
+                            </div>
+                            <div th:if="${log.updatedValue != null and log.updatedValue != '-'}">
+                                <span class="audit-diff-box audit-diff-next" th:title="${log.updatedValue}" th:text="'New: ' + ${log.updatedValue}">New</span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(logs)}">
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-journal-x fs-2 d-block mb-2"></i>
+                            No activity log entries match the selected filter.
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

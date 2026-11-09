@@ -1,7 +1,10 @@
 package com.showroom.inventory;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+import java.util.TimeZone;
 
 /**
  * InventoryApplication - Entry Point of the Mobile Showroom Inventory Management System.
@@ -32,7 +35,13 @@ public class InventoryApplication {
      *
      * @param args command-line arguments passed to the application
      */
+    @PostConstruct
+    public void initTimezone() {
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Kolkata"));
+    }
+
     public static void main(String[] args) {
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Kolkata"));
         // Print a welcome banner to the console when the application starts
         System.out.println("=========================================================");
         System.out.println("   Mobile Showroom Inventory Management System");

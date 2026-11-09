@@ -15,9 +15,11 @@ import java.util.List;
 public class SupplierService {
 
     private final SupplierRepository supplierRepository;
+    private final ActivityLogService activityLogService;
 
-    public SupplierService(SupplierRepository supplierRepository) {
+    public SupplierService(SupplierRepository supplierRepository, ActivityLogService activityLogService) {
         this.supplierRepository = supplierRepository;
+        this.activityLogService = activityLogService;
     }
 
     public List<Supplier> getAllActiveSuppliers() {
@@ -46,7 +48,16 @@ public class SupplierService {
 
     @Transactional
     public Supplier saveSupplier(Supplier supplier) {
-        return supplierRepository.save(supplier);
+        boolean isNew = (supplier.getId() == null);
+        Supplier saved = supplierRepository.save(supplier);
+        activityLogService.logCurrentUserAction(
+                isNew ? "CREATE_SUPPLIER" : "UPDATE_SUPPLIER",
+                "SUPPLIERS",
+                (isNew ? "Added new supplier '" : "Updated supplier '") + saved.getName() + "'",
+                isNew ? "None" : "Supplier ID: " + saved.getId(),
+                "Name: " + saved.getName() + ", Contact: " + saved.getContactPerson() + ", Phone: " + saved.getPhone()
+        );
+        return saved;
     }
 
     @Transactional
@@ -54,5 +65,12 @@ public class SupplierService {
         Supplier supplier = getSupplierById(id);
         supplier.setActive(false);
         supplierRepository.save(supplier);
+        activityLogService.logCurrentUserAction(
+                "DEACTIVATE_SUPPLIER",
+                "SUPPLIERS",
+                "Deactivated supplier '" + supplier.getName() + "'",
+                "Status: ACTIVE",
+                "Status: INACTIVE"
+        );
     }
 }

@@ -22,10 +22,14 @@ public class InventoryService {
 
     private final ProductRepository productRepository;
     private final StockMovementRepository stockMovementRepository;
+    private final ActivityLogService activityLogService;
 
-    public InventoryService(ProductRepository productRepository, StockMovementRepository stockMovementRepository) {
+    public InventoryService(ProductRepository productRepository,
+                            StockMovementRepository stockMovementRepository,
+                            ActivityLogService activityLogService) {
         this.productRepository = productRepository;
         this.stockMovementRepository = stockMovementRepository;
+        this.activityLogService = activityLogService;
     }
 
     public List<StockMovement> getAllMovements() {
@@ -98,5 +102,13 @@ public class InventoryService {
         movement.setReferenceNumber("ADJ-" + System.currentTimeMillis() % 100000);
         movement.setNotes("Manual stock adjustment: " + (reason != null && !reason.trim().isEmpty() ? reason : "Inventory count correction"));
         stockMovementRepository.save(movement);
+
+        activityLogService.logCurrentUserAction(
+                "STOCK_ADJUSTMENT",
+                "INVENTORY",
+                "Adjusted stock for '" + product.getName() + "' (" + product.getProductCode() + ") from " + before + " to " + newQuantity,
+                "Stock Quantity: " + before,
+                "Stock Quantity: " + newQuantity + " (Reason: " + (reason != null ? reason : "Count correction") + ")"
+        );
     }
 }

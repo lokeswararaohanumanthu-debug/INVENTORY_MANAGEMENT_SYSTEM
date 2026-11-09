@@ -19,9 +19,11 @@ import java.util.List;
 public class ExpenseService {
 
     private final ExpenseRepository expenseRepository;
+    private final ActivityLogService activityLogService;
 
-    public ExpenseService(ExpenseRepository expenseRepository) {
+    public ExpenseService(ExpenseRepository expenseRepository, ActivityLogService activityLogService) {
         this.expenseRepository = expenseRepository;
+        this.activityLogService = activityLogService;
     }
 
     public List<Expense> getAllExpenses() {
@@ -50,25 +52,51 @@ public class ExpenseService {
         Expense expense = new Expense();
         expense.setCategory(dto.getCategory());
         expense.setAmount(dto.getAmount());
-        expense.setExpenseDate(dto.getExpenseDate() != null ? dto.getExpenseDate() : LocalDate.now());
+        expense.setExpenseDate(dto.getExpenseDate() != null ? dto.getExpenseDate() : LocalDate.now(SaleService.IST_ZONE));
         expense.setDescription(dto.getDescription());
-        return expenseRepository.save(expense);
+        Expense saved = expenseRepository.save(expense);
+        activityLogService.logCurrentUserAction(
+                "CREATE_EXPENSE",
+                "EXPENSES",
+                "Recorded expense of ₹" + saved.getAmount() + " under category " + saved.getCategory().getDisplayName(),
+                "None",
+                "Category: " + saved.getCategory().name() + ", Amount: ₹" + saved.getAmount() + ", Date: " + saved.getExpenseDate()
+        );
+        return saved;
     }
 
     @Transactional
     public Expense updateExpense(Long id, ExpenseDTO dto) {
         Expense expense = getExpenseById(id);
+        String prev = "Category: " + expense.getCategory().name() + ", Amount: ₹" + expense.getAmount() + ", Date: " + expense.getExpenseDate();
         expense.setCategory(dto.getCategory());
         expense.setAmount(dto.getAmount());
         expense.setExpenseDate(dto.getExpenseDate());
         expense.setDescription(dto.getDescription());
-        return expenseRepository.save(expense);
+        Expense saved = expenseRepository.save(expense);
+        String next = "Category: " + saved.getCategory().name() + ", Amount: ₹" + saved.getAmount() + ", Date: " + saved.getExpenseDate();
+        activityLogService.logCurrentUserAction(
+                "UPDATE_EXPENSE",
+                "EXPENSES",
+                "Updated expense record #" + saved.getId(),
+                prev,
+                next
+        );
+        return saved;
     }
 
     @Transactional
     public void deleteExpense(Long id) {
         Expense expense = getExpenseById(id);
+        String prev = "Category: " + expense.getCategory().name() + ", Amount: ₹" + expense.getAmount() + ", Desc: " + expense.getDescription();
         expenseRepository.delete(expense);
+        activityLogService.logCurrentUserAction(
+                "DELETE_EXPENSE",
+                "EXPENSES",
+                "Deleted expense record #" + id + " (₹" + expense.getAmount() + ")",
+                prev,
+                "Deleted"
+        );
     }
 
     public ExpenseDTO convertToDto(Expense expense) {

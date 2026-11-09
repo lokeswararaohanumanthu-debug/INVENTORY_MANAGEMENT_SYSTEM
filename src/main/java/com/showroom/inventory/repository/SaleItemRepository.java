@@ -47,23 +47,43 @@ public interface SaleItemRepository extends JpaRepository<SaleItem, Long> {
      * @param pageable pagination information to limit the number of results
      * @return list of Object arrays containing [productName, brand, totalQuantitySold]
      */
-    @Query("SELECT si.product.name, si.product.brand, SUM(si.quantity) AS totalSold " +
+    @Query("SELECT si.product.name, si.product.brand, SUM(si.quantity) AS totalSold, COALESCE(SUM(si.totalPrice), 0) AS totalRev " +
            "FROM SaleItem si " +
            "GROUP BY si.product.name, si.product.brand " +
            "ORDER BY totalSold DESC")
     List<Object[]> findBestSellingProducts(Pageable pageable);
 
     /**
+     * Find the best-selling products by total quantity sold within a specific date range.
+     */
+    @Query("SELECT si.product.name, si.product.brand, SUM(si.quantity) AS totalSold, COALESCE(SUM(si.totalPrice), 0) AS totalRev " +
+           "FROM SaleItem si " +
+           "WHERE si.sale.saleDate BETWEEN :start AND :end " +
+           "GROUP BY si.product.name, si.product.brand " +
+           "ORDER BY totalSold DESC")
+    List<Object[]> findBestSellingProductsBetween(@Param("start") LocalDate start,
+                                                  @Param("end") LocalDate end,
+                                                  Pageable pageable);
+
+    /**
+     * Calculate total units sold within a specific date range.
+     */
+    @Query("SELECT COALESCE(SUM(si.quantity), 0) " +
+           "FROM SaleItem si " +
+           "WHERE si.sale.saleDate BETWEEN :start AND :end")
+    long sumQuantitySoldBetween(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    /**
      * Calculate the Cost of Goods Sold (COGS) for a given date range.
-     * COGS is computed as the sum of (quantity * costPrice) for all sale items
-     * where the parent sale's date falls within the specified range.
+     * COGS is computed as the sum of (quantity * COALESCE(costPrice, product.purchasePrice, 0))
+     * for all sale items where the parent sale's date falls within the specified range.
      * Returns 0 if no sales exist in the range (using COALESCE).
      *
      * @param start the start date (inclusive)
      * @param end   the end date (inclusive)
      * @return the total cost of goods sold in the date range
      */
-    @Query("SELECT COALESCE(SUM(si.quantity * si.costPrice), 0) " +
+    @Query("SELECT COALESCE(SUM(si.quantity * COALESCE(si.costPrice, si.product.purchasePrice, 0)), 0) " +
            "FROM SaleItem si " +
            "WHERE si.sale.saleDate BETWEEN :start AND :end")
     BigDecimal sumCostOfGoodsSoldBetween(@Param("start") LocalDate start, @Param("end") LocalDate end);
@@ -77,9 +97,21 @@ public interface SaleItemRepository extends JpaRepository<SaleItem, Long> {
      * @param pageable pagination information to limit the number of results
      * @return list of Object arrays containing [productName, brand, totalQuantitySold]
      */
-    @Query("SELECT si.product.name, si.product.brand, SUM(si.quantity) AS totalSold " +
+    @Query("SELECT si.product.name, si.product.brand, SUM(si.quantity) AS totalSold, COALESCE(SUM(si.totalPrice), 0) AS totalRev " +
            "FROM SaleItem si " +
            "GROUP BY si.product.name, si.product.brand " +
            "ORDER BY totalSold ASC")
     List<Object[]> findSlowMovingProducts(Pageable pageable);
+
+    /**
+     * Find slow-moving products within a specific date range.
+     */
+    @Query("SELECT si.product.name, si.product.brand, SUM(si.quantity) AS totalSold, COALESCE(SUM(si.totalPrice), 0) AS totalRev " +
+           "FROM SaleItem si " +
+           "WHERE si.sale.saleDate BETWEEN :start AND :end " +
+           "GROUP BY si.product.name, si.product.brand " +
+           "ORDER BY totalSold ASC")
+    List<Object[]> findSlowMovingProductsBetween(@Param("start") LocalDate start,
+                                                 @Param("end") LocalDate end,
+                                                 Pageable pageable);
 }

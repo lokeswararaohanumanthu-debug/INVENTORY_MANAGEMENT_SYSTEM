@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Executive Dashboard - MobileZone Pro</title>
+    <title>Executive Dashboard - INVENTRA</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/style.css}">
@@ -13,129 +13,1032 @@
 <!-- Sidebar Fragment -->
 <div th:replace="~{fragments/sidebar :: sidebar}"></div>
 
-<!-- Main Area -->
+<!-- Main Workspace Area -->
 <div class="app-main">
     <div th:replace="~{fragments/header :: header('Executive Dashboard')}"></div>
 
     <div class="page-container">
-        <!-- Flash messages -->
+        <!-- Flash Alerts -->
         <div th:replace="~{fragments/alerts :: alerts}"></div>
 
-        <!-- KPI Cards Row 1 -->
-        <div class="row g-3 mb-4">
-            <div class="col-xl-3 col-md-6">
-                <div class="metric-card">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="metric-title">Today's Sales</span>
-                        <div class="metric-icon-box icon-green"><i class="bi bi-currency-rupee"></i></div>
-                    </div>
-                    <div class="metric-value" th:text="'₹' + ${#numbers.formatDecimal(dashboard.todaySales, 1, 'COMMA', 2, 'POINT')}">₹0.00</div>
-                    <div class="metric-subtitle text-success"><i class="bi bi-clock-history"></i> Live daily turnover</div>
-                </div>
+        <!-- First-Login Password Update Advisory -->
+        <div th:if="${currentUser != null and currentUser.passwordChangeRequired}"
+             class="alert alert-info border-info d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 py-2 px-3">
+            <div class="d-flex align-items-center gap-2 small">
+                <i class="bi bi-key-fill text-primary fs-6"></i>
+                <span>
+                    <strong>Security Advisory:</strong> You are signed in with an initial temporary password.
+                    Please update your account password for enhanced security.
+                </span>
             </div>
-
-            <div class="col-xl-3 col-md-6">
-                <div class="metric-card">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="metric-title">Monthly Revenue</span>
-                        <div class="metric-icon-box icon-blue"><i class="bi bi-graph-up-arrow"></i></div>
-                    </div>
-                    <div class="metric-value" th:text="'₹' + ${#numbers.formatDecimal(dashboard.monthlyRevenue, 1, 'COMMA', 2, 'POINT')}">₹0.00</div>
-                    <div class="metric-subtitle text-muted">Current month sales total</div>
-                </div>
-            </div>
-
-            <div class="col-xl-3 col-md-6">
-                <div class="metric-card">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="metric-title">Monthly Expenses</span>
-                        <div class="metric-icon-box icon-amber"><i class="bi bi-wallet2"></i></div>
-                    </div>
-                    <div class="metric-value" th:text="'₹' + ${#numbers.formatDecimal(dashboard.monthlyExpenses, 1, 'COMMA', 2, 'POINT')}">₹0.00</div>
-                    <div class="metric-subtitle text-muted">Overhead + salaries + rent</div>
-                </div>
-            </div>
-
-            <div class="col-xl-3 col-md-6">
-                <div class="metric-card">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="metric-title">Monthly Net Profit</span>
-                        <div class="metric-icon-box" th:classappend="${dashboard.monthlyNetProfit >= 0} ? 'icon-teal' : 'icon-red'">
-                            <i class="bi bi-trophy-fill" th:if="${dashboard.monthlyNetProfit >= 0}"></i>
-                            <i class="bi bi-arrow-down-circle-fill" th:unless="${dashboard.monthlyNetProfit >= 0}"></i>
-                        </div>
-                    </div>
-                    <div class="metric-value" th:classappend="${dashboard.monthlyNetProfit >= 0} ? 'text-success' : 'text-danger'"
-                         th:text="'₹' + ${#numbers.formatDecimal(dashboard.monthlyNetProfit, 1, 'COMMA', 2, 'POINT')}">₹0.00</div>
-                    <div class="metric-subtitle text-muted">Gross Profit - Expenses</div>
-                </div>
-            </div>
+            <a th:href="@{/profile/change-password}" class="btn btn-sm btn-primary fw-semibold">
+                <i class="bi bi-shield-lock me-1"></i>Update Password
+            </a>
         </div>
 
-        <!-- KPI Cards Row 2 -->
-        <div class="row g-3 mb-4">
-            <div class="col-xl-4 col-md-6">
-                <div class="metric-card">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="metric-title">Active Products</span>
-                        <div class="metric-icon-box icon-purple"><i class="bi bi-phone"></i></div>
-                    </div>
-                    <div class="metric-value" th:text="${dashboard.totalProducts}">0</div>
-                    <div class="metric-subtitle text-muted">Distinct models & accessories in catalog</div>
+        <!-- SaaS Executive Welcome & Quick Action Header -->
+        <div class="exec-welcome-bar">
+            <div>
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                    <h1 class="exec-welcome-title mb-0"
+                        th:text="${currentUser != null} ? 'Welcome back, ' + ${currentUser.fullName} : 'Welcome back, Executive'">
+                        Welcome back
+                    </h1>
+                    <span th:if="${currentUser != null}"
+                          class="role-badge"
+                          th:classappend="${currentUser.role.badgeClass}"
+                          th:text="${currentUser.role.displayName}">Role</span>
+                    <span th:if="${currentUser != null}"
+                          class="badge bg-light text-secondary border font-monospace"
+                          th:text="'@' + ${currentUser.username}">@user</span>
                 </div>
+                <p class="exec-welcome-subtitle"
+                   th:text="${currentUser != null} ? ${currentUser.role.description} : 'Track, manage and forecast showroom sales, inventory velocity and financial performance.'">
+                    Track, manage and forecast showroom sales, inventory velocity and financial performance.
+                </p>
             </div>
 
-            <div class="col-xl-4 col-md-6">
-                <div class="metric-card">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="metric-title">Total Units In Stock</span>
-                        <div class="metric-icon-box icon-blue"><i class="bi bi-boxes"></i></div>
-                    </div>
-                    <div class="metric-value" th:text="${dashboard.totalStockQuantity} + ' Units'">0 Units</div>
-                    <div class="metric-subtitle text-muted">Aggregated showroom stock</div>
-                </div>
-            </div>
-
-            <div class="col-xl-4 col-md-12">
-                <div class="metric-card" th:classappend="${dashboard.lowStockCount > 0} ? 'border-warning' : ''">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="metric-title">Low Stock Alerts</span>
-                        <div class="metric-icon-box icon-red"><i class="bi bi-exclamation-triangle-fill"></i></div>
-                    </div>
-                    <div class="metric-value text-danger" th:text="${dashboard.lowStockCount}">0</div>
-                    <div class="metric-subtitle">
-                        <a th:href="@{/inventory/low-stock}" class="text-decoration-none text-danger fw-semibold">
-                            View low stock items <i class="bi bi-arrow-right"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Low Stock Alert Banner (if any) -->
-        <div th:if="${dashboard.lowStockCount > 0}" class="content-card border-warning bg-warning bg-opacity-10 mb-4">
-            <div class="d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center gap-3">
-                    <i class="bi bi-exclamation-diamond-fill text-warning fs-3"></i>
-                    <div>
-                        <h6 class="mb-0 fw-bold text-dark">Attention Needed: <span th:text="${dashboard.lowStockCount}">0</span> items are below minimum stock level!</h6>
-                        <span class="small text-muted">Restock these models to avoid lost sales at the showroom counter.</span>
-                    </div>
-                </div>
-                <a th:href="@{/purchases/new}" class="btn btn-warning btn-sm fw-semibold shadow-sm">
-                    <i class="bi bi-cart-plus me-1"></i> Restock Now
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <button type="button" id="exportDashboardCsvBtn" class="btn btn-sm btn-outline-secondary fw-semibold">
+                    <i class="bi bi-cloud-arrow-down me-1"></i>Export CSV
+                </button>
+                <a th:if="${@rbac.has('USER_VIEW')}" th:href="@{/users}" class="btn btn-sm btn-outline-primary fw-semibold">
+                    <i class="bi bi-people me-1"></i>Users &amp; RBAC
+                </a>
+                <a th:if="${@rbac.has('APPROVAL_VIEW')}" th:href="@{/approvals}" class="btn btn-sm btn-outline-secondary fw-semibold">
+                    <i class="bi bi-check2-square me-1"></i>Approvals
+                    <span th:if="${pendingApprovalsCount != null and pendingApprovalsCount > 0}"
+                          class="badge bg-warning text-dark ms-1" th:text="${pendingApprovalsCount}">1</span>
+                </a>
+                <a th:if="${@rbac.has('PURCHASE_CREATE')}" th:href="@{/purchases/new}" class="btn btn-sm btn-outline-primary fw-semibold">
+                    <i class="bi bi-box-seam me-1"></i>+ Record Stock In
+                </a>
+                <a th:if="${@rbac.has('SALES_CREATE')}" th:href="@{/sales/billing}" class="btn btn-sm btn-primary fw-semibold shadow-sm">
+                    <i class="bi bi-plus-lg me-1"></i>New POS Bill
                 </a>
             </div>
         </div>
 
-        <!-- Recent Transactions Grid -->
+        <!-- Functional Date Filter Toolbar -->
+        <div class="exec-filter-bar">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <div class="exec-period-pills" role="group" aria-label="Dashboard Date Filters">
+                    <a th:href="@{/dashboard(period='TODAY')}"
+                       class="exec-period-pill"
+                       th:classappend="${selectedPeriod == 'TODAY'} ? 'active' : ''">Today</a>
+                    <a th:href="@{/dashboard(period='YESTERDAY')}"
+                       class="exec-period-pill"
+                       th:classappend="${selectedPeriod == 'YESTERDAY'} ? 'active' : ''">Yesterday</a>
+                    <a th:href="@{/dashboard(period='LAST_7_DAYS')}"
+                       class="exec-period-pill"
+                       th:classappend="${selectedPeriod == 'LAST_7_DAYS'} ? 'active' : ''">Last 7 Days</a>
+                    <a th:href="@{/dashboard(period='THIS_WEEK')}"
+                       class="exec-period-pill"
+                       th:classappend="${selectedPeriod == 'THIS_WEEK'} ? 'active' : ''">This Week</a>
+                    <a th:href="@{/dashboard(period='THIS_MONTH')}"
+                       class="exec-period-pill"
+                       th:classappend="${selectedPeriod == 'THIS_MONTH'} ? 'active' : ''">This Month</a>
+                    <a th:href="@{/dashboard(period='LAST_MONTH')}"
+                       class="exec-period-pill"
+                       th:classappend="${selectedPeriod == 'LAST_MONTH'} ? 'active' : ''">Last Month</a>
+                    <button type="button"
+                            id="toggleCustomRangeBtn"
+                            class="exec-period-pill"
+                            th:classappend="${selectedPeriod == 'CUSTOM'} ? 'active' : ''">
+                        <i class="bi bi-calendar-range me-1"></i>Custom Range
+                    </button>
+                </div>
+
+                <span class="badge bg-light text-secondary border px-2 py-2 fw-medium">
+                    <i class="bi bi-calendar3 text-primary me-1"></i>
+                    <span th:text="${dashboard.periodLabel}">This Month</span>:
+                    <strong class="ms-1" th:text="${dashboard.periodRangeText}">01 Nov 2026 - 30 Nov 2026</strong>
+                </span>
+            </div>
+
+            <!-- Custom Date Range Form -->
+            <form th:action="@{/dashboard}" method="get" id="customDateForm"
+                  class="flex-wrap align-items-center gap-2"
+                  th:classappend="${selectedPeriod == 'CUSTOM'} ? 'd-flex' : 'd-none'">
+                <input type="hidden" name="period" value="CUSTOM">
+                <div class="input-group input-group-sm" style="width: auto;">
+                    <span class="input-group-text">From</span>
+                    <input type="date" name="startDate" class="form-control form-control-sm"
+                           th:value="${startDate}" required>
+                </div>
+                <div class="input-group input-group-sm" style="width: auto;">
+                    <span class="input-group-text">To</span>
+                    <input type="date" name="endDate" class="form-control form-control-sm"
+                           th:value="${endDate}" required>
+                </div>
+                <button type="submit" class="btn btn-sm btn-primary fw-semibold">
+                    <i class="bi bi-funnel-fill me-1"></i>Apply
+                </button>
+            </form>
+        </div>
+
+        <!-- =========================================================================
+             INTERACTIVE DASHBOARD OPEN / CLOSE SECTION TOGGLE CONTROLLER BAR
+             ========================================================================= -->
+        <div class="dash-workspace-toggles">
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1">
+                    <i class="bi bi-sliders2-vertical me-1"></i>Workspace View Controls
+                </span>
+                <span class="small text-muted d-none d-md-inline">Click any module pill to open or close dashboard sections:</span>
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <button type="button"
+                        class="dash-toggle-pill is-active"
+                        data-target-section="dashSectionFinancialKpis"
+                        onclick="toggleDashboardSection('dashSectionFinancialKpis', this)">
+                    <i class="bi bi-grid-3x2-gap-fill"></i>
+                    <span>KPI Metrics (7 Tiles)</span>
+                    <i class="bi bi-chevron-down pill-chevron"></i>
+                </button>
+                <button type="button"
+                        class="dash-toggle-pill is-active"
+                        data-target-section="dashSectionRevenueCharts"
+                        onclick="toggleDashboardSection('dashSectionRevenueCharts', this)">
+                    <i class="bi bi-graph-up-arrow"></i>
+                    <span>Revenue &amp; P&amp;L Charts</span>
+                    <i class="bi bi-chevron-down pill-chevron"></i>
+                </button>
+                <button type="button"
+                        class="dash-toggle-pill is-active"
+                        data-target-section="dashSectionDeepAnalytics"
+                        onclick="toggleDashboardSection('dashSectionDeepAnalytics', this)">
+                    <i class="bi bi-bar-chart-line"></i>
+                    <span>Performance Analytics</span>
+                    <i class="bi bi-chevron-down pill-chevron"></i>
+                </button>
+                <button type="button"
+                        class="dash-toggle-pill"
+                        onclick="toggleAllInventraPanels(this)"
+                        title="Open or Close All Dashboard Sections">
+                    <i class="bi bi-arrows-angle-contract"></i>
+                    <span class="master-toggle-label">Close All Panels</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- =========================================================================
+             EXECUTIVE KPI TILES: 7 METRICS DISPLAYED 3 TILES PER ROW
+             ========================================================================= -->
+        <div id="dashSectionFinancialKpis"
+             class="inventra-collapsible-section mb-4"
+             th:if="${@rbac.hasAny('DASHBOARD_FULL', 'DASHBOARD_FINANCIAL', 'SALES_VIEW_ALL', 'SALES_VIEW_OWN', 'PRODUCT_VIEW', 'STOCK_VIEW', 'PURCHASE_VIEW')}">
+            <div class="row g-3">
+
+            <!-- TILE 1: Today's Sales -->
+            <div class="col-xl-4 col-md-6"
+                 th:if="${@rbac.hasAny('DASHBOARD_FULL', 'DASHBOARD_FINANCIAL', 'SALES_VIEW_ALL', 'SALES_VIEW_OWN')}">
+                <a th:href="@{/sales(period='TODAY')}" class="exec-kpi-card" title="Open Today's Sales Ledger">
+                    <div>
+                        <div class="exec-kpi-top">
+                            <span class="exec-kpi-label"
+                                  th:text="${ownSalesOnly != null and ownSalesOnly} ? 'My Today\'s Sales' : 'Today\'s Sales'">Today's Sales</span>
+                            <div class="exec-kpi-icon icon-green">
+                                <i class="bi bi-currency-rupee"></i>
+                            </div>
+                        </div>
+                        <div class="exec-kpi-main">
+                            <div>
+                                <div class="exec-kpi-value" th:text="${@currencyUtil.formatInr(dashboard.todaySales)}">₹0</div>
+                                <div class="mt-2">
+                                    <span class="exec-trend-badge"
+                                          th:classappend="${dashboard.todayVsYesterdayPct >= 0} ? 'exec-trend-up' : 'exec-trend-down'">
+                                        <i class="bi" th:classappend="${dashboard.todayVsYesterdayPct >= 0} ? 'bi-arrow-up-right' : 'bi-arrow-down-right'"></i>
+                                        <span th:text="${(dashboard.todayVsYesterdayPct >= 0 ? '+' : '') + dashboard.todayVsYesterdayPct + '% vs yesterday'}">+0% vs yesterday</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <svg class="exec-sparkline-svg" viewBox="0 0 96 36" fill="none" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="sparkGreen" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="#10b981" stop-opacity="0.28"/>
+                                        <stop offset="100%" stop-color="#10b981" stop-opacity="0.0"/>
+                                    </linearGradient>
+                                </defs>
+                                <path d="M2 28 L18 24 L34 26 L50 16 L66 19 L82 9 L94 5 L94 34 L2 34 Z" fill="url(#sparkGreen)"/>
+                                <path d="M2 28 L18 24 L34 26 L50 16 L66 19 L82 9 L94 5" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="exec-kpi-footer">
+                        <span>
+                            <i class="bi bi-receipt me-1"></i>
+                            <strong th:text="${dashboard.todayInvoiceCount}">0</strong> invoices billed today
+                        </span>
+                        <span class="exec-nav-arrow"><i class="bi bi-arrow-up-right"></i></span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- TILE 2: Monthly / Period Revenue -->
+            <div class="col-xl-4 col-md-6"
+                 th:if="${@rbac.hasAny('DASHBOARD_FULL', 'DASHBOARD_FINANCIAL', 'SALES_VIEW_ALL', 'SALES_VIEW_OWN')}">
+                <a th:href="${@rbac.hasAny('REPORT_PNL_VIEW', 'REPORT_FINANCIAL_VIEW')} ? @{/reports(startDate=${startDate}, endDate=${endDate})} : @{/sales}"
+                   class="exec-kpi-card" title="Open Revenue &amp; Sales Analytics">
+                    <div>
+                        <div class="exec-kpi-top">
+                            <span class="exec-kpi-label"
+                                  th:text="${(ownSalesOnly != null and ownSalesOnly ? 'My ' : '') + (selectedPeriod == 'THIS_MONTH' ? 'Monthly Revenue' : dashboard.periodLabel + ' Revenue')}">
+                                Monthly Revenue
+                            </span>
+                            <div class="exec-kpi-icon icon-blue">
+                                <i class="bi bi-graph-up-arrow"></i>
+                            </div>
+                        </div>
+                        <div class="exec-kpi-main">
+                            <div>
+                                <div class="exec-kpi-value" th:text="${@currencyUtil.formatInr(dashboard.monthlyRevenue)}">₹0</div>
+                                <div class="mt-2">
+                                    <span class="exec-trend-badge"
+                                          th:classappend="${dashboard.revenueGrowthPct >= 0} ? 'exec-trend-up' : 'exec-trend-down'">
+                                        <i class="bi" th:classappend="${dashboard.revenueGrowthPct >= 0} ? 'bi-arrow-up-right' : 'bi-arrow-down-right'"></i>
+                                        <span th:text="${(dashboard.revenueGrowthPct >= 0 ? '+' : '') + dashboard.revenueGrowthPct + '% vs prev period'}">+0% vs prev period</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <svg class="exec-sparkline-svg" viewBox="0 0 96 36" fill="none" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="sparkBlue" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="#2563eb" stop-opacity="0.28"/>
+                                        <stop offset="100%" stop-color="#2563eb" stop-opacity="0.0"/>
+                                    </linearGradient>
+                                </defs>
+                                <path d="M2 30 L18 25 L34 21 L50 23 L66 13 L82 10 L94 6 L94 34 L2 34 Z" fill="url(#sparkBlue)"/>
+                                <path d="M2 30 L18 25 L34 21 L50 23 L66 13 L82 10 L94 6" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="exec-kpi-footer">
+                        <span>
+                            <strong th:text="${dashboard.periodInvoiceCount}">0</strong> bills &bull;
+                            <strong th:text="${dashboard.periodUnitsSold}">0</strong> units sold
+                        </span>
+                        <span class="exec-nav-arrow"><i class="bi bi-arrow-up-right"></i></span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- TILE 3: Monthly Expenses (or Counter Performance for Salesman) -->
+            <div class="col-xl-4 col-md-6"
+                 th:if="${@rbac.hasAny('DASHBOARD_FULL', 'DASHBOARD_FINANCIAL', 'EXPENSE_VIEW')}">
+                <a th:href="@{/expenses}" class="exec-kpi-card" title="Open Showroom Expense Tracker">
+                    <div>
+                        <div class="exec-kpi-top">
+                            <span class="exec-kpi-label"
+                                  th:text="${selectedPeriod == 'THIS_MONTH'} ? 'Monthly Expenses' : ${dashboard.periodLabel + ' Expenses'}">
+                                Monthly Expenses
+                            </span>
+                            <div class="exec-kpi-icon icon-amber">
+                                <i class="bi bi-wallet2"></i>
+                            </div>
+                        </div>
+                        <div class="exec-kpi-main">
+                            <div>
+                                <div class="exec-kpi-value" th:text="${@currencyUtil.formatInr(dashboard.monthlyExpenses)}">₹0</div>
+                                <div class="mt-2">
+                                    <span class="exec-trend-badge exec-trend-neutral">
+                                        <i class="bi bi-pie-chart"></i>
+                                        <span th:text="${dashboard.expenseRatioPct + '% of revenue'}">0% of revenue</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <svg class="exec-sparkline-svg" viewBox="0 0 96 36" fill="none" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="sparkAmber" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="#d97706" stop-opacity="0.25"/>
+                                        <stop offset="100%" stop-color="#d97706" stop-opacity="0.0"/>
+                                    </linearGradient>
+                                </defs>
+                                <path d="M2 22 L18 24 L34 18 L50 20 L66 16 L82 19 L94 15 L94 34 L2 34 Z" fill="url(#sparkAmber)"/>
+                                <path d="M2 22 L18 24 L34 18 L50 20 L66 16 L82 19 L94 15" stroke="#d97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="exec-kpi-footer">
+                        <span>
+                            <strong th:text="${dashboard.periodExpenseCount}">0</strong> expense vouchers logged
+                        </span>
+                        <span class="exec-nav-arrow"><i class="bi bi-arrow-up-right"></i></span>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-xl-4 col-md-6"
+                 th:if="${ownSalesOnly != null and ownSalesOnly and !@rbac.hasAny('DASHBOARD_FULL', 'DASHBOARD_FINANCIAL')}">
+                <a th:href="@{/sales/billing}" class="exec-kpi-card" title="Open POS Billing Counter">
+                    <div>
+                        <div class="exec-kpi-top">
+                            <span class="exec-kpi-label">My Counter Performance</span>
+                            <div class="exec-kpi-icon icon-purple">
+                                <i class="bi bi-bag-check"></i>
+                            </div>
+                        </div>
+                        <div class="exec-kpi-main">
+                            <div>
+                                <div class="exec-kpi-value" th:text="${dashboard.periodInvoiceCount} + ' Bills'">0 Bills</div>
+                                <div class="mt-2">
+                                    <span class="exec-trend-badge exec-trend-up">
+                                        <i class="bi bi-box-seam"></i>
+                                        <span th:text="${dashboard.periodUnitsSold} + ' units sold in period'">0 units sold</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <svg class="exec-sparkline-svg" viewBox="0 0 96 36" fill="none" aria-hidden="true">
+                                <path d="M2 28 L20 22 L38 24 L56 15 L74 12 L94 6" stroke="#7c3aed" stroke-width="2.2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="exec-kpi-footer">
+                        <span>Click to launch POS Billing Counter</span>
+                        <span class="exec-nav-arrow"><i class="bi bi-arrow-up-right"></i></span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- TILE 4: Monthly Net Profit -->
+            <div class="col-xl-4 col-md-6"
+                 th:if="${@rbac.hasAny('DASHBOARD_FULL', 'DASHBOARD_FINANCIAL', 'REPORT_PNL_VIEW')}">
+                <a th:href="@{/reports(startDate=${startDate}, endDate=${endDate})}"
+                   class="exec-kpi-card" title="Open Profit &amp; Loss Financial Statement">
+                    <div>
+                        <div class="exec-kpi-top">
+                            <span class="exec-kpi-label"
+                                  th:text="${selectedPeriod == 'THIS_MONTH'} ? 'Monthly Net Profit' : ${dashboard.periodLabel + ' Net Profit'}">
+                                Monthly Net Profit
+                            </span>
+                            <div class="exec-kpi-icon" th:classappend="${dashboard.monthlyNetProfit >= 0} ? 'icon-teal' : 'icon-red'">
+                                <i class="bi bi-award" th:if="${dashboard.monthlyNetProfit >= 0}"></i>
+                                <i class="bi bi-exclamation-octagon" th:unless="${dashboard.monthlyNetProfit >= 0}"></i>
+                            </div>
+                        </div>
+                        <div class="exec-kpi-main">
+                            <div>
+                                <div class="exec-kpi-value"
+                                     th:classappend="${dashboard.monthlyNetProfit >= 0} ? 'text-success' : 'text-danger'"
+                                     th:text="${@currencyUtil.formatInr(dashboard.monthlyNetProfit)}">₹0</div>
+                                <div class="mt-2">
+                                    <span class="exec-trend-badge"
+                                          th:classappend="${dashboard.monthlyNetProfit >= 0} ? 'exec-trend-up' : 'exec-trend-down'">
+                                        <i class="bi" th:classappend="${dashboard.monthlyNetProfit >= 0} ? 'bi-check-circle' : 'bi-arrow-down-right'"></i>
+                                        <span th:text="'Net Margin: ' + ${dashboard.periodNetMargin} + '%'">Net Margin: 0%</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <svg class="exec-sparkline-svg" viewBox="0 0 96 36" fill="none" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="sparkTeal" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="#0d9488" stop-opacity="0.28"/>
+                                        <stop offset="100%" stop-color="#0d9488" stop-opacity="0.0"/>
+                                    </linearGradient>
+                                </defs>
+                                <path d="M2 29 L18 26 L34 22 L50 18 L66 15 L82 11 L94 7 L94 34 L2 34 Z" fill="url(#sparkTeal)"/>
+                                <path d="M2 29 L18 26 L34 22 L50 18 L66 15 L82 11 L94 7" stroke="#0d9488" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="exec-kpi-footer">
+                        <span>
+                            Gross Profit: <strong th:text="${@currencyUtil.formatInr(dashboard.periodGrossProfit)}">₹0</strong>
+                        </span>
+                        <span class="exec-nav-arrow"><i class="bi bi-arrow-up-right"></i></span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- TILE 5: Active Products -->
+            <div class="col-xl-4 col-md-6" th:if="${@rbac.has('PRODUCT_VIEW')}">
+                <a th:href="@{/products}" class="exec-kpi-card" title="Open Product Catalogue">
+                    <div>
+                        <div class="exec-kpi-top">
+                            <span class="exec-kpi-label">Active Products</span>
+                            <div class="exec-kpi-icon icon-purple">
+                                <i class="bi bi-phone"></i>
+                            </div>
+                        </div>
+                        <div class="exec-kpi-main">
+                            <div>
+                                <div class="exec-kpi-value" th:text="${dashboard.totalProducts}">0</div>
+                                <div class="mt-2">
+                                    <span class="exec-trend-badge exec-trend-up">
+                                        <i class="bi bi-check2-circle"></i>
+                                        <span th:text="${dashboard.optimalStockCount} + ' optimal stock SKUs'">0 optimal stock SKUs</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <svg class="exec-sparkline-svg" viewBox="0 0 96 36" fill="none" aria-hidden="true">
+                                <path d="M2 26 L18 23 L34 20 L50 18 L66 15 L82 12 L94 9" stroke="#7c3aed" stroke-width="2.2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="exec-kpi-footer">
+                        <span>
+                            <strong th:text="${dashboard.totalCatalogProducts}">0</strong> total registered catalog SKUs
+                        </span>
+                        <span class="exec-nav-arrow"><i class="bi bi-arrow-up-right"></i></span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- TILE 6: Total Units in Stock -->
+            <div class="col-xl-4 col-md-6" th:if="${@rbac.has('STOCK_VIEW')}">
+                <a th:href="@{/inventory}" class="exec-kpi-card" title="Open Live Showroom Stock Levels">
+                    <div>
+                        <div class="exec-kpi-top">
+                            <span class="exec-kpi-label">Total Units in Stock</span>
+                            <div class="exec-kpi-icon icon-blue">
+                                <i class="bi bi-boxes"></i>
+                            </div>
+                        </div>
+                        <div class="exec-kpi-main">
+                            <div>
+                                <div class="exec-kpi-value" th:text="${dashboard.totalStockQuantity} + ' Units'">0 Units</div>
+                                <div class="mt-2">
+                                    <span class="exec-trend-badge exec-trend-neutral">
+                                        <i class="bi bi-arrow-down-up"></i>
+                                        <span th:text="'+' + ${dashboard.periodUnitsReceived} + ' units stocked in period'">+0 units stocked in period</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <svg class="exec-sparkline-svg" viewBox="0 0 96 36" fill="none" aria-hidden="true">
+                                <path d="M2 24 L18 20 L34 22 L50 14 L66 16 L82 11 L94 8" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="exec-kpi-footer">
+                        <span>
+                            Out of stock SKUs: <strong th:text="${dashboard.outOfStockCount}">0</strong>
+                        </span>
+                        <span class="exec-nav-arrow"><i class="bi bi-arrow-up-right"></i></span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- TILE 7: Low Stock Alerts -->
+            <div class="col-xl-4 col-md-6" th:if="${@rbac.has('STOCK_VIEW')}">
+                <a th:href="@{/inventory/low-stock}"
+                   class="exec-kpi-card"
+                   th:classappend="${dashboard.lowStockCount > 0} ? 'border-warning' : ''"
+                   title="Open Low Stock Alert Management">
+                    <div>
+                        <div class="exec-kpi-top">
+                            <span class="exec-kpi-label">Low Stock Alerts</span>
+                            <div class="exec-kpi-icon icon-red">
+                                <i class="bi bi-exclamation-triangle"></i>
+                            </div>
+                        </div>
+                        <div class="exec-kpi-main">
+                            <div>
+                                <div class="exec-kpi-value text-danger" th:text="${dashboard.lowStockCount}">0</div>
+                                <div class="mt-2">
+                                    <span class="exec-trend-badge"
+                                          th:classappend="${dashboard.lowStockCount > 0} ? 'exec-trend-down' : 'exec-trend-up'">
+                                        <i class="bi" th:classappend="${dashboard.lowStockCount > 0} ? 'bi-bell' : 'bi-shield-check'"></i>
+                                        <span th:text="${dashboard.lowStockCount > 0} ? 'Requires vendor restock' : 'All SKUs above threshold'">Status</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <svg class="exec-sparkline-svg" viewBox="0 0 96 36" fill="none" aria-hidden="true">
+                                <path d="M2 14 L18 16 L34 12 L50 22 L66 25 L82 28 L94 30" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="exec-kpi-footer">
+                        <span class="text-danger fw-semibold">View low stock items &amp; reorder</span>
+                        <span class="exec-nav-arrow"><i class="bi bi-arrow-up-right"></i></span>
+                    </div>
+                </a>
+            </div>
+            </div>
+        </div>
+
+        <!-- Procurement KPI Row for Purchase Officer / Inventory Manager -->
+        <div class="row g-3 mb-4"
+             th:if="${(@rbac.has('PURCHASE_VIEW') or @rbac.has('STOCK_VIEW')) and !@rbac.hasAny('DASHBOARD_FULL', 'DASHBOARD_FINANCIAL', 'SALES_VIEW_OWN')}">
+            <div class="col-md-4" th:if="${@rbac.has('PURCHASE_VIEW')}">
+                <a th:href="@{/purchases}" class="exec-kpi-card">
+                    <div class="exec-kpi-top">
+                        <span class="exec-kpi-label" th:text="${dashboard.periodLabel + ' Procurement Spend'}">Period Procurement Spend</span>
+                        <div class="exec-kpi-icon icon-blue"><i class="bi bi-truck"></i></div>
+                    </div>
+                    <div class="exec-kpi-value mb-2" th:text="${@currencyUtil.formatInr(dashboard.periodPurchasesAmount)}">₹0</div>
+                    <div class="exec-kpi-footer">
+                        <span><strong th:text="${dashboard.periodPurchasesCount}">0</strong> purchase orders recorded</span>
+                        <span class="exec-nav-arrow"><i class="bi bi-arrow-up-right"></i></span>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4" th:if="${@rbac.has('PURCHASE_VIEW')}">
+                <a th:href="@{/purchases}" class="exec-kpi-card">
+                    <div class="exec-kpi-top">
+                        <span class="exec-kpi-label">Units Received in Period</span>
+                        <div class="exec-kpi-icon icon-green"><i class="bi bi-box-arrow-in-down"></i></div>
+                    </div>
+                    <div class="exec-kpi-value mb-2" th:text="${dashboard.periodUnitsReceived} + ' Units'">0 Units</div>
+                    <div class="exec-kpi-footer">
+                        <span>Inward vendor batch stock-in</span>
+                        <span class="exec-nav-arrow"><i class="bi bi-arrow-up-right"></i></span>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4" th:if="${@rbac.has('SUPPLIER_VIEW')}">
+                <a th:href="@{/suppliers}" class="exec-kpi-card">
+                    <div class="exec-kpi-top">
+                        <span class="exec-kpi-label">Registered Active Vendors</span>
+                        <div class="exec-kpi-icon icon-purple"><i class="bi bi-building"></i></div>
+                    </div>
+                    <div class="exec-kpi-value mb-2" th:text="${dashboard.activeSuppliersCount} + ' Vendors'">0 Vendors</div>
+                    <div class="exec-kpi-footer">
+                        <span>Authorized supplier directory</span>
+                        <span class="exec-nav-arrow"><i class="bi bi-arrow-up-right"></i></span>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Low Stock Attention Banner (Zero Emojis) -->
+        <div th:if="${dashboard.lowStockCount > 0 and @rbac.has('STOCK_VIEW')}"
+             class="content-card border-warning bg-warning bg-opacity-10 mb-4 py-3 px-4">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="exec-kpi-icon icon-amber">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0 fw-bold">
+                            Inventory Threshold Alert:
+                            <span th:text="${dashboard.lowStockCount}">0</span> product(s) are at or below minimum stock level
+                        </h6>
+                        <span class="small text-muted">
+                            Initiate a vendor purchase order to replenish showroom counter inventory and prevent stockouts.
+                        </span>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <a th:if="${@rbac.has('PURCHASE_CREATE')}" th:href="@{/purchases/new}" class="btn btn-warning btn-sm fw-semibold shadow-sm">
+                        <i class="bi bi-cart-plus me-1"></i>Restock Now
+                    </a>
+                    <a th:href="@{/inventory/low-stock}" class="btn btn-outline-secondary btn-sm fw-semibold">
+                        <i class="bi bi-list-check me-1"></i>Inspect Low Stock
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- =========================================================================
+             INTERACTIVE BUSINESS GRAPHS SECTION (REAL DATABASE ANALYTICS)
+             ========================================================================= -->
+        <div id="dashSectionRevenueCharts"
+             class="inventra-collapsible-section mb-4"
+             th:if="${@rbac.hasAny('DASHBOARD_FULL', 'DASHBOARD_FINANCIAL', 'SALES_VIEW_ALL', 'SALES_VIEW_OWN')}">
+            <div class="row g-4">
+
+            <!-- CHART A: Sales Revenue Trend (Daily / Weekly / Monthly Toggle) -->
+            <div th:class="${@rbac.hasAny('DASHBOARD_FULL', 'DASHBOARD_FINANCIAL', 'REPORT_PNL_VIEW')} ? 'col-xl-7' : 'col-xl-12'">
+                <div class="exec-chart-card">
+                    <div class="exec-chart-header">
+                        <div>
+                            <h5 class="exec-chart-title">
+                                <i class="bi bi-activity text-primary me-2"></i>
+                                <span th:text="${ownSalesOnly != null and ownSalesOnly} ? 'My Sales Revenue Trend' : 'Sales Revenue Trend'">Sales Revenue Trend</span>
+                            </h5>
+                            <p class="exec-chart-subtitle">
+                                Real-time showroom billing trajectory (<span th:text="${dashboard.periodRangeText}">Period</span>)
+                            </p>
+                        </div>
+                        <div class="exec-granularity-tabs" role="tablist" aria-label="Chart Granularity">
+                            <button type="button" class="exec-granularity-btn active" data-granularity="daily">Daily</button>
+                            <button type="button" class="exec-granularity-btn" data-granularity="weekly">Weekly</button>
+                            <button type="button" class="exec-granularity-btn" data-granularity="monthly">Monthly</button>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Graph Telemetry Strip -->
+                    <div class="chart-telemetry-strip">
+                        <span class="chart-telemetry-pill">
+                            <span class="spark-live-badge">LIVE STREAM</span>
+                        </span>
+                        <span class="chart-telemetry-pill">
+                            <i class="bi bi-trophy-fill text-warning"></i>
+                            <span>Peak: <strong id="salesChartPeakLabel" class="text-primary">₹0</strong></span>
+                        </span>
+                        <span class="chart-telemetry-pill">
+                            <i class="bi bi-distribute-horizontal text-info"></i>
+                            <span>Avg / Interval: <strong id="salesChartAvgLabel">₹0</strong></span>
+                        </span>
+                        <span class="chart-telemetry-pill">
+                            <i class="bi bi-Activity text-success"></i>
+                            <span>Invoices: <strong th:text="${dashboard.periodInvoiceCount}">0</strong> (<strong th:text="${dashboard.periodUnitsSold}">0</strong> units)</span>
+                        </span>
+                    </div>
+
+                    <div class="position-relative" style="height: 290px;">
+                        <canvas id="salesTrendCanvas" style="width: 100%; height: 290px;"></canvas>
+                        <div id="salesTrendTooltip"
+                             class="position-fixed bg-dark text-white small px-3 py-2 rounded-3 shadow-lg pointer-events-none"
+                             style="display:none; z-index: 1080; pointer-events: none; font-size: 0.78rem;"></div>
+                    </div>
+
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3 pt-3 border-top small text-muted">
+                        <div class="d-flex align-items-center gap-3">
+                            <span><i class="bi bi-circle-fill text-primary me-1" style="font-size: 0.55rem;"></i>Sales Revenue (₹)</span>
+                            <span th:if="${@rbac.hasAny('DASHBOARD_FULL', 'DASHBOARD_FINANCIAL', 'EXPENSE_VIEW')}">
+                                <i class="bi bi-circle-fill text-warning me-1" style="font-size: 0.55rem;"></i>Operating Expenses (₹)
+                            </span>
+                        </div>
+                        <div>
+                            Selected Period Total:
+                            <strong class="text-primary" th:text="${@currencyUtil.formatInr(dashboard.monthlyRevenue)}">₹0</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHART B & C: Revenue vs Expenses & Profit/Loss Analysis (Financial Roles Only) -->
+            <div class="col-xl-5"
+                 th:if="${@rbac.hasAny('DASHBOARD_FULL', 'DASHBOARD_FINANCIAL', 'REPORT_PNL_VIEW')}">
+                <div class="exec-chart-card d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="exec-chart-header">
+                            <div>
+                                <h5 class="exec-chart-title">
+                                    <i class="bi bi-bar-chart-steps text-success me-2"></i>Revenue vs Expenses &amp; P&amp;L Analysis
+                                </h5>
+                                <p class="exec-chart-subtitle">
+                                    Accrual profit &amp; loss waterfall for <span th:text="${dashboard.periodLabel}">This Month</span>
+                                </p>
+                            </div>
+                            <a th:href="@{/reports(startDate=${startDate}, endDate=${endDate})}"
+                               class="btn btn-sm btn-outline-primary py-1 px-2" style="font-size: 0.76rem;">
+                                Full P&amp;L Report <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+
+                        <!-- Detailed Waterfall Telemetry Strip -->
+                        <div class="chart-telemetry-strip">
+                            <span class="chart-telemetry-pill">
+                                <span class="spark-live-badge">WATERFALL</span>
+                            </span>
+                            <span class="chart-telemetry-pill">
+                                <i class="bi bi-percent text-primary"></i>
+                                <span>Gross Margin: <strong th:text="${dashboard.periodGrossMargin + '%'}">0%</strong></span>
+                            </span>
+                            <span class="chart-telemetry-pill">
+                                <i class="bi bi-shield-check text-success"></i>
+                                <span>Net Margin: <strong th:text="${dashboard.periodNetMargin + '%'}">0%</strong></span>
+                            </span>
+                        </div>
+
+                        <!-- Interactive Canvas for Revenue / COGS / Gross Profit / Expenses / Net Profit -->
+                        <div class="mb-3" style="height: 165px;">
+                            <canvas id="pnlComparisonCanvas" style="width: 100%; height: 165px;"></canvas>
+                        </div>
+
+                        <!-- Structured P&L Breakdown Rows -->
+                        <div class="d-flex flex-column gap-2 small">
+                            <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+                                <span class="text-muted"><i class="bi bi-arrow-up-right-circle text-primary me-1"></i>1. Gross Sales Revenue</span>
+                                <span class="fw-bold" th:text="${@currencyUtil.formatInr(dashboard.monthlyRevenue)}">₹0</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+                                <span class="text-muted"><i class="bi bi-box-seam text-secondary me-1"></i>2. Cost of Goods Sold (COGS)</span>
+                                <span class="fw-semibold text-secondary" th:text="'-' + ${@currencyUtil.formatInr(dashboard.periodCogs)}">-₹0</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+                                <span class="text-muted">
+                                    <i class="bi bi-layers text-info me-1"></i>3. Gross Trading Profit
+                                    <span class="badge bg-light text-secondary border ms-1" th:text="${dashboard.periodGrossMargin + '% margin'}">0%</span>
+                                </span>
+                                <span class="fw-bold text-primary" th:text="${@currencyUtil.formatInr(dashboard.periodGrossProfit)}">₹0</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+                                <span class="text-muted"><i class="bi bi-wallet2 text-warning me-1"></i>4. Operating Expenses</span>
+                                <span class="fw-semibold text-warning" th:text="'-' + ${@currencyUtil.formatInr(dashboard.monthlyExpenses)}">-₹0</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center pt-2">
+                                <span class="fw-bold">
+                                    <i class="bi bi-check2-circle text-success me-1"></i>5. Net Showroom Profit
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 ms-1"
+                                          th:text="${dashboard.periodNetMargin + '% net'}">0%</span>
+                                </span>
+                                <span class="fw-bold fs-6"
+                                      th:classappend="${dashboard.monthlyNetProfit >= 0} ? 'text-success' : 'text-danger'"
+                                      th:text="${@currencyUtil.formatInr(dashboard.monthlyNetProfit)}">₹0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Channel Split Mini Summary -->
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="d-flex justify-content-between align-items-center small text-muted mb-2">
+                            <span class="fw-semibold">Payment Mode Collections (<span th:text="${dashboard.periodLabel}">Period</span>)</span>
+                            <span>100% Real-Time Ledger</span>
+                        </div>
+                        <div class="row g-2 text-center small">
+                            <div class="col-3">
+                                <div class="p-2 rounded border bg-light bg-opacity-50">
+                                    <div class="text-muted" style="font-size: 0.7rem;">CASH</div>
+                                    <div class="fw-bold text-truncate" th:text="${@currencyUtil.formatInr(dashboard.cashSalesTotal)}">₹0</div>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="p-2 rounded border bg-light bg-opacity-50">
+                                    <div class="text-muted" style="font-size: 0.7rem;">UPI</div>
+                                    <div class="fw-bold text-truncate" th:text="${@currencyUtil.formatInr(dashboard.upiSalesTotal)}">₹0</div>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="p-2 rounded border bg-light bg-opacity-50">
+                                    <div class="text-muted" style="font-size: 0.7rem;">CARD</div>
+                                    <div class="fw-bold text-truncate" th:text="${@currencyUtil.formatInr(dashboard.cardSalesTotal)}">₹0</div>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="p-2 rounded border bg-light bg-opacity-50">
+                                    <div class="text-muted" style="font-size: 0.7rem;">BANK</div>
+                                    <div class="fw-bold text-truncate" th:text="${@currencyUtil.formatInr(dashboard.bankSalesTotal)}">₹0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <!-- =========================================================================
+             CHART D & CHART E: EMPLOYEE SALES PERFORMANCE & PRODUCT SALES ANALYSIS
+             ========================================================================= -->
+        <div id="dashSectionDeepAnalytics"
+             class="inventra-collapsible-section mb-4"
+             th:if="${@rbac.hasAny('DASHBOARD_FULL', 'DASHBOARD_FINANCIAL', 'SALES_VIEW_ALL', 'SALES_VIEW_OWN')}">
+            <div class="row g-4">
+
+            <!-- CHART D: Employee Sales Performance (Visible to Full / Financial / All-Sales viewers) -->
+            <div class="col-xl-5"
+                 th:if="${@rbac.hasAny('DASHBOARD_FULL', 'DASHBOARD_FINANCIAL', 'SALES_VIEW_ALL')}">
+                <div class="exec-chart-card">
+                    <div class="exec-chart-header">
+                        <div>
+                            <h5 class="exec-chart-title">
+                                <i class="bi bi-people-fill text-primary me-2"></i>Employee Sales Performance
+                            </h5>
+                            <p class="exec-chart-subtitle">
+                                Counter billing attribution across showroom staff (<span th:text="${dashboard.periodLabel}">Period</span>)
+                            </p>
+                        </div>
+                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">
+                            <span th:text="${#lists.size(dashboard.employeePerformance)}">0</span> Active Billers
+                        </span>
+                    </div>
+
+                    <div th:if="${!#lists.isEmpty(dashboard.employeePerformance)}" class="d-flex flex-column gap-3">
+                        <div th:each="emp : ${dashboard.employeePerformance}" class="p-2 rounded-3 border bg-light bg-opacity-25">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1">
+                                <div>
+                                    <span class="fw-bold" th:text="${emp.employeeName}">Employee Name</span>
+                                    <span class="badge bg-light text-secondary border ms-1" style="font-size: 0.7rem;"
+                                          th:text="${emp.roleName}">Role</span>
+                                </div>
+                                <div class="text-end">
+                                    <span class="fw-bold text-primary" th:text="${@currencyUtil.formatInr(emp.totalRevenue)}">₹0</span>
+                                    <span class="badge bg-primary bg-opacity-10 text-primary ms-1"
+                                          th:text="${emp.sharePercent + '%'}">0%</span>
+                                </div>
+                            </div>
+                            <div class="exec-bar-track mb-1">
+                                <div class="exec-bar-fill"
+                                     style="background: linear-gradient(90deg, #2563eb, #3b82f6);"
+                                     th:styleappend="'width:' + ${emp.sharePercent > 4 ? emp.sharePercent : 4} + '%;'"></div>
+                            </div>
+                            <div class="d-flex justify-content-between small text-muted" style="font-size: 0.75rem;">
+                                <span><i class="bi bi-receipt me-1"></i><strong th:text="${emp.invoiceCount}">0</strong> invoices</span>
+                                <span><i class="bi bi-box-seam me-1"></i><strong th:text="${emp.unitsSold}">0</strong> units dispatched</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div th:if="${#lists.isEmpty(dashboard.employeePerformance)}" class="text-center text-muted py-5">
+                        <i class="bi bi-bar-chart-line fs-2 d-block mb-2 text-secondary"></i>
+                        No employee sales recorded in the selected date range.
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHART E: Product Sales Analysis (Best-Selling & Slow-Moving Products with Revenue) -->
+            <div th:class="${@rbac.hasAny('DASHBOARD_FULL', 'DASHBOARD_FINANCIAL', 'SALES_VIEW_ALL')} ? 'col-xl-7' : 'col-xl-12'">
+                <div class="exec-chart-card">
+                    <div class="exec-chart-header">
+                        <div>
+                            <h5 class="exec-chart-title">
+                                <i class="bi bi-box-seam-fill text-indigo me-2" style="color: #4f46e5;"></i>Product Sales Velocity &amp; Revenue Analysis
+                            </h5>
+                            <p class="exec-chart-subtitle">
+                                Top revenue-generating models and slow-moving SKUs (<span th:text="${dashboard.periodLabel}">Period</span>)
+                            </p>
+                        </div>
+                        <a th:href="@{/products}" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.76rem;">
+                            Product Catalogue <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+
+                    <div class="row g-3">
+                        <!-- Best-Selling Products -->
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-3 border h-100">
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <h6 class="fw-bold mb-0 small text-uppercase text-success">
+                                        <i class="bi bi-graph-up-arrow me-1"></i>Best-Selling Products
+                                    </h6>
+                                    <span class="badge bg-success bg-opacity-10 text-success">Top 5</span>
+                                </div>
+
+                                <div th:if="${!#lists.isEmpty(dashboard.bestSellingProducts)}" class="table-responsive">
+                                    <table class="table table-sm align-middle mb-0">
+                                        <thead>
+                                        <tr class="small text-muted">
+                                            <th>Product</th>
+                                            <th class="text-center">Units</th>
+                                            <th class="text-end">Revenue</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr th:each="item, stat : ${dashboard.bestSellingProducts}">
+                                            <td>
+                                                <div class="fw-semibold small" th:text="${item[0]}">Product Name</div>
+                                                <div class="text-muted" style="font-size: 0.72rem;" th:text="${item[1]}">Brand</div>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-success bg-opacity-10 text-success fw-bold"
+                                                      th:text="${item[2]}">0</span>
+                                            </td>
+                                            <td class="text-end fw-bold small"
+                                                th:text="${item.length > 3 ? @currencyUtil.formatInr(item[3]) : '—'}">₹0</td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div th:if="${#lists.isEmpty(dashboard.bestSellingProducts)}" class="text-center text-muted small py-4">
+                                    No product sales recorded in this period.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slow-Moving Products -->
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-3 border h-100">
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <h6 class="fw-bold mb-0 small text-uppercase text-warning">
+                                        <i class="bi bi-hourglass-split me-1"></i>Slow-Moving Products
+                                    </h6>
+                                    <span class="badge bg-warning bg-opacity-10 text-warning">Low Velocity</span>
+                                </div>
+
+                                <div th:if="${!#lists.isEmpty(dashboard.slowMovingProducts)}" class="table-responsive">
+                                    <table class="table table-sm align-middle mb-0">
+                                        <thead>
+                                        <tr class="small text-muted">
+                                            <th>Product</th>
+                                            <th class="text-center">Units</th>
+                                            <th class="text-end">Revenue</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr th:each="item, stat : ${dashboard.slowMovingProducts}">
+                                            <td>
+                                                <div class="fw-semibold small" th:text="${item[0]}">Product Name</div>
+                                                <div class="text-muted" style="font-size: 0.72rem;" th:text="${item[1]}">Brand</div>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-secondary bg-opacity-10 text-secondary fw-bold"
+                                                      th:text="${item[2]}">0</span>
+                                            </td>
+                                            <td class="text-end fw-semibold small text-muted"
+                                                th:text="${item.length > 3 ? @currencyUtil.formatInr(item[3]) : '—'}">₹0</td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div th:if="${#lists.isEmpty(dashboard.slowMovingProducts)}" class="text-center text-muted small py-4">
+                                    No slow-moving product data for this period.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <!-- =========================================================================
+             CATEGORY STOCK DISTRIBUTION & VENDOR PROCUREMENT ANALYTICS
+             (Visible to Inventory Manager, Purchase Officer, and Full Dashboard Roles)
+             ========================================================================= -->
+        <div class="row g-4 mb-4"
+             th:if="${@rbac.hasAny('STOCK_VIEW', 'PURCHASE_VIEW', 'DASHBOARD_FULL')}">
+
+            <!-- Category Stock Distribution -->
+            <div class="col-lg-6" th:if="${@rbac.hasAny('STOCK_VIEW', 'DASHBOARD_FULL')}">
+                <div class="exec-chart-card">
+                    <div class="exec-chart-header">
+                        <div>
+                            <h5 class="exec-chart-title">
+                                <i class="bi bi-pie-chart-fill text-primary me-2"></i>Category Stock Distribution
+                            </h5>
+                            <p class="exec-chart-subtitle">Live showroom inventory units grouped by product category</p>
+                        </div>
+                        <a th:href="@{/inventory}" class="btn btn-sm btn-outline-primary py-1 px-2" style="font-size: 0.76rem;">
+                            Stock Ledger <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+
+                    <div th:if="${!#lists.isEmpty(dashboard.categoryStockBreakdown)}" class="d-flex flex-column gap-3">
+                        <div th:each="cat : ${dashboard.categoryStockBreakdown}">
+                            <div class="d-flex justify-content-between align-items-center small mb-1">
+                                <div>
+                                    <span class="fw-bold" th:text="${cat.categoryName}">Category</span>
+                                    <span class="text-muted ms-1" th:text="'(' + ${cat.productCount} + ' SKUs)'">(0 SKUs)</span>
+                                </div>
+                                <div>
+                                    <strong th:text="${cat.totalUnits} + ' Units'">0 Units</strong>
+                                    <span class="badge bg-light text-secondary border ms-1" th:text="${cat.sharePercent + '%'}">0%</span>
+                                </div>
+                            </div>
+                            <div class="exec-bar-track">
+                                <div class="exec-bar-fill"
+                                     style="background: linear-gradient(90deg, #0ea5e9, #2563eb);"
+                                     th:styleappend="'width:' + ${cat.sharePercent > 4 ? cat.sharePercent : 4} + '%;'"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vendor Procurement Breakdown -->
+            <div class="col-lg-6" th:if="${@rbac.hasAny('PURCHASE_VIEW', 'DASHBOARD_FULL')}">
+                <div class="exec-chart-card">
+                    <div class="exec-chart-header">
+                        <div>
+                            <h5 class="exec-chart-title">
+                                <i class="bi bi-building-check text-success me-2"></i>Supplier Procurement Breakdown
+                            </h5>
+                            <p class="exec-chart-subtitle">
+                                Stock-in batch volume and spend by vendor (<span th:text="${dashboard.periodLabel}">Period</span>)
+                            </p>
+                        </div>
+                        <a th:href="@{/purchases}" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.76rem;">
+                            Purchase Batches <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+
+                    <div th:if="${!#lists.isEmpty(dashboard.vendorProcurementBreakdown)}" class="d-flex flex-column gap-3">
+                        <div th:each="v : ${dashboard.vendorProcurementBreakdown}">
+                            <div class="d-flex justify-content-between align-items-center small mb-1">
+                                <div>
+                                    <span class="fw-bold" th:text="${v.vendorName}">Vendor</span>
+                                    <span class="text-muted ms-1"
+                                          th:text="'(' + ${v.orderCount} + ' POs, ' + ${v.unitsReceived} + ' units)'">(0 POs)</span>
+                                </div>
+                                <div>
+                                    <strong class="text-success" th:text="${@currencyUtil.formatInr(v.totalAmount)}">₹0</strong>
+                                    <span class="badge bg-light text-secondary border ms-1" th:text="${v.sharePercent + '%'}">0%</span>
+                                </div>
+                            </div>
+                            <div class="exec-bar-track">
+                                <div class="exec-bar-fill"
+                                     style="background: linear-gradient(90deg, #10b981, #059669);"
+                                     th:styleappend="'width:' + ${v.sharePercent > 4 ? v.sharePercent : 4} + '%;'"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div th:if="${#lists.isEmpty(dashboard.vendorProcurementBreakdown)}" class="text-center text-muted py-4 small">
+                        <i class="bi bi-truck fs-3 d-block mb-2"></i>
+                        No supplier purchase orders recorded in the selected period.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =========================================================================
+             RECENT ACTIVITY SECTIONS: RECENT SALES & RECENT RESTOCKS
+             ========================================================================= -->
         <div class="row g-4">
-            <!-- Recent Sales -->
-            <div class="col-lg-6">
+            <!-- Recent Sales Table (With Bill #, Customer, Date, Payment Mode, Amount, Action, View All) -->
+            <div th:class="${@rbac.has('PURCHASE_VIEW')} ? 'col-xl-6' : 'col-xl-12'"
+                 th:if="${@rbac.hasAny('SALES_VIEW_ALL', 'SALES_VIEW_OWN')}">
                 <div class="content-card h-100">
                     <div class="content-card-header">
-                        <h5 class="content-card-title"><i class="bi bi-receipt text-primary me-2"></i>Recent Sales</h5>
-                        <a th:href="@{/sales}" class="btn btn-outline-primary btn-sm">View All</a>
+                        <h5 class="content-card-title">
+                            <i class="bi bi-receipt-cutoff text-primary me-2"></i>
+                            <span th:text="${ownSalesOnly != null and ownSalesOnly} ? 'My Recent Sales Invoices' : 'Recent Sales'">Recent Sales</span>
+                        </h5>
+                        <a th:href="@{/sales}" class="btn btn-outline-primary btn-sm fw-semibold">
+                            View All <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
@@ -144,24 +1047,44 @@
                                 <th>Bill #</th>
                                 <th>Customer</th>
                                 <th>Date</th>
+                                <th>Payment Mode</th>
                                 <th class="text-end">Amount</th>
                                 <th class="text-center">Action</th>
                             </tr>
                             </thead>
                             <tbody>
                             <tr th:each="sale : ${dashboard.recentSales}">
-                                <td class="fw-semibold text-primary" th:text="${sale.billNumber}">BILL-001</td>
-                                <td th:text="${sale.customerName}">Walk-in</td>
-                                <td class="small text-muted" th:text="${sale.saleDate}">2026-11-04</td>
-                                <td class="text-end fw-bold" th:text="'₹' + ${#numbers.formatDecimal(sale.netAmount, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
+                                <td>
+                                    <a th:href="@{'/sales/view/' + ${sale.id}}"
+                                       class="fw-bold text-primary text-decoration-none font-monospace small"
+                                       th:text="${sale.billNumber}">BILL-001</a>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold small" th:text="${sale.customerName}">Customer</div>
+                                    <div class="text-muted" style="font-size: 0.72rem;"
+                                         th:if="${sale.customerPhone != null and !#strings.isEmpty(sale.customerPhone)}"
+                                         th:text="${sale.customerPhone}">Phone</div>
+                                </td>
+                                <td class="small text-muted" th:text="${sale.saleDate}">2026-11-05</td>
+                                <td>
+                                    <span class="badge bg-light text-secondary border font-monospace"
+                                          style="font-size: 0.72rem;"
+                                          th:text="${sale.paymentMethod}">CASH</span>
+                                </td>
+                                <td class="text-end fw-bold" th:text="${@currencyUtil.formatInr(sale.netAmount)}">₹0</td>
                                 <td class="text-center">
-                                    <a th:href="@{'/sales/view/' + ${sale.id}}" class="btn btn-sm btn-light border py-0 px-2" title="View Invoice">
+                                    <a th:href="@{'/sales/view/' + ${sale.id}}"
+                                       class="btn btn-sm btn-light border py-1 px-2"
+                                       title="View Sales Invoice">
                                         <i class="bi bi-eye"></i>
                                     </a>
                                 </td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(dashboard.recentSales)}">
-                                <td colspan="5" class="text-center text-muted py-3">No sales recorded yet.</td>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox fs-4 d-block mb-1"></i>
+                                    No sales invoices recorded in this period.
+                                </td>
                             </tr>
                             </tbody>
                         </table>
@@ -169,12 +1092,17 @@
                 </div>
             </div>
 
-            <!-- Recent Purchases -->
-            <div class="col-lg-6">
+            <!-- Recent Restocks Table (With PO #, Supplier, Date, Products Received, Total Amount, Action, View All) -->
+            <div th:class="${@rbac.hasAny('SALES_VIEW_ALL', 'SALES_VIEW_OWN')} ? 'col-xl-6' : 'col-xl-12'"
+                 th:if="${@rbac.has('PURCHASE_VIEW')}">
                 <div class="content-card h-100">
                     <div class="content-card-header">
-                        <h5 class="content-card-title"><i class="bi bi-truck text-secondary me-2"></i>Recent Restocks</h5>
-                        <a th:href="@{/purchases}" class="btn btn-outline-secondary btn-sm">View All</a>
+                        <h5 class="content-card-title">
+                            <i class="bi bi-truck text-success me-2"></i>Recent Restocks
+                        </h5>
+                        <a th:href="@{/purchases}" class="btn btn-outline-secondary btn-sm fw-semibold">
+                            View All <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
@@ -183,24 +1111,93 @@
                                 <th>PO #</th>
                                 <th>Supplier</th>
                                 <th>Date</th>
-                                <th class="text-end">Total</th>
+                                <th>Products Received</th>
+                                <th class="text-end">Total Amount</th>
                                 <th class="text-center">Action</th>
                             </tr>
                             </thead>
                             <tbody>
                             <tr th:each="p : ${dashboard.recentPurchases}">
-                                <td class="fw-semibold text-dark" th:text="${p.purchaseNumber}">PO-001</td>
-                                <td th:text="${p.supplier.name}">Supplier</td>
-                                <td class="small text-muted" th:text="${p.purchaseDate}">2026-11-04</td>
-                                <td class="text-end fw-bold" th:text="'₹' + ${#numbers.formatDecimal(p.totalAmount, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
+                                <td>
+                                    <a th:href="@{'/purchases/view/' + ${p.id}}"
+                                       class="fw-bold text-decoration-none font-monospace small"
+                                       th:text="${p.purchaseNumber}">PO-001</a>
+                                </td>
+                                <td class="fw-semibold small" th:text="${p.supplier != null ? p.supplier.name : 'Vendor'}">Supplier</td>
+                                <td class="small text-muted" th:text="${p.purchaseDate}">2026-11-05</td>
+                                <td>
+                                    <div th:if="${p.items != null and !#lists.isEmpty(p.items)}" class="d-flex flex-wrap gap-1">
+                                        <span th:each="item, iterStat : ${p.items}"
+                                              th:if="${iterStat.index < 2}"
+                                              class="badge bg-light text-dark border fw-normal"
+                                              style="font-size: 0.72rem;">
+                                            <span th:text="${item.product != null ? item.product.name : 'Item'}">Item</span>
+                                            <strong class="text-primary ms-1" th:text="'x' + ${item.quantity}">x1</strong>
+                                        </span>
+                                        <span th:if="${#lists.size(p.items) > 2}"
+                                              class="badge bg-secondary bg-opacity-10 text-secondary"
+                                              style="font-size: 0.7rem;"
+                                              th:text="'+' + (${#lists.size(p.items)} - 2) + ' more'">+1 more</span>
+                                    </div>
+                                    <span th:if="${p.items == null or #lists.isEmpty(p.items)}" class="text-muted small">—</span>
+                                </td>
+                                <td class="text-end fw-bold" th:text="${@currencyUtil.formatInr(p.totalAmount)}">₹0</td>
                                 <td class="text-center">
-                                    <a th:href="@{'/purchases/view/' + ${p.id}}" class="btn btn-sm btn-light border py-0 px-2" title="View PO">
+                                    <a th:href="@{'/purchases/view/' + ${p.id}}"
+                                       class="btn btn-sm btn-light border py-1 px-2"
+                                       title="View Purchase Order">
                                         <i class="bi bi-eye"></i>
                                     </a>
                                 </td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(dashboard.recentPurchases)}">
-                                <td colspan="5" class="text-center text-muted py-3">No purchases recorded yet.</td>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox fs-4 d-block mb-1"></i>
+                                    No purchase orders recorded yet.
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Stock Movements Ledger (Specifically helpful for Inventory Manager) -->
+        <div class="row g-4 mt-1" th:if="${@rbac.has('STOCK_ADJUST') and !#lists.isEmpty(dashboard.recentStockMovements)}">
+            <div class="col-12">
+                <div class="content-card">
+                    <div class="content-card-header">
+                        <h5 class="content-card-title">
+                            <i class="bi bi-arrow-left-right text-primary me-2"></i>Recent Inventory Stock Movements
+                        </h5>
+                        <a th:href="@{/inventory}" class="btn btn-outline-primary btn-sm">Open Stock Ledger</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                            <tr>
+                                <th>Product</th>
+                                <th>Movement Type</th>
+                                <th class="text-center">Quantity</th>
+                                <th class="text-center">Before &rarr; After</th>
+                                <th>Reference #</th>
+                                <th>Timestamp</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="sm : ${dashboard.recentStockMovements}">
+                                <td class="fw-semibold small" th:text="${sm.product != null ? sm.product.name : 'Product'}">Product</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border font-monospace"
+                                          th:text="${sm.movementType}">SALE_OUT</span>
+                                </td>
+                                <td class="text-center fw-bold" th:text="${sm.quantity}">1</td>
+                                <td class="text-center small text-muted"
+                                    th:text="${sm.stockBefore} + ' → ' + ${sm.stockAfter}">10 -> 9</td>
+                                <td class="font-monospace small" th:text="${sm.referenceNumber}">REF</td>
+                                <td class="small text-muted"
+                                    th:text="${sm.createdAt != null ? #temporals.format(sm.createdAt, 'dd MMM yyyy HH:mm') : '—'}">Date</td>
                             </tr>
                             </tbody>
                         </table>
@@ -214,5 +1211,616 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script th:src="@{/js/app.js}"></script>
+
+<!-- Interactive Executive Charts & CSV Export Script (100% Real Database Series) -->
+<script th:inline="javascript">
+    (function () {
+        // Custom Date Range toggle button
+        const toggleCustomBtn = document.getElementById('toggleCustomRangeBtn');
+        const customDateForm = document.getElementById('customDateForm');
+        if (toggleCustomBtn && customDateForm) {
+            toggleCustomBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const isHidden = customDateForm.classList.contains('d-none');
+                if (isHidden) {
+                    customDateForm.classList.remove('d-none');
+                    customDateForm.classList.add('d-flex');
+                    toggleCustomBtn.classList.add('active');
+                } else {
+                    customDateForm.classList.remove('d-flex');
+                    customDateForm.classList.add('d-none');
+                    toggleCustomBtn.classList.remove('active');
+                }
+            });
+        }
+
+        // Real database chart series injected from DashboardDTO
+        const chartData = {
+            daily: {
+                labels: /*[[${dashboard.dailyLabels}]]*/ [],
+                revenue: /*[[${dashboard.dailyRevenueSeries}]]*/ [],
+                expenses: /*[[${dashboard.dailyExpenseSeries}]]*/ []
+            },
+            weekly: {
+                labels: /*[[${dashboard.weeklyLabels}]]*/ [],
+                revenue: /*[[${dashboard.weeklyRevenueSeries}]]*/ [],
+                expenses: /*[[${dashboard.weeklyExpenseSeries}]]*/ []
+            },
+            monthly: {
+                labels: /*[[${dashboard.monthlyLabels}]]*/ [],
+                revenue: /*[[${dashboard.monthlyRevenueSeries}]]*/ [],
+                expenses: /*[[${dashboard.monthlyExpenseSeries}]]*/ []
+            },
+            pnl: {
+                revenue: /*[[${dashboard.monthlyRevenue}]]*/ 0,
+                cogs: /*[[${dashboard.periodCogs}]]*/ 0,
+                grossProfit: /*[[${dashboard.periodGrossProfit}]]*/ 0,
+                expenses: /*[[${dashboard.monthlyExpenses}]]*/ 0,
+                netProfit: /*[[${dashboard.monthlyNetProfit}]]*/ 0
+            },
+            showExpenses: /*[[${@rbac.hasAny('DASHBOARD_FULL', 'DASHBOARD_FINANCIAL', 'EXPENSE_VIEW')}]]*/ false
+        };
+
+        function formatInrShort(val) {
+            const num = Number(val) || 0;
+            const sign = num < 0 ? '-' : '';
+            const abs = Math.abs(num);
+            if (abs >= 10000000) return sign + '₹' + (abs / 10000000).toFixed(2) + ' Cr';
+            if (abs >= 100000) return sign + '₹' + (abs / 100000).toFixed(2) + ' L';
+            if (abs >= 1000) return sign + '₹' + (abs / 1000).toFixed(1) + 'k';
+            return sign + '₹' + Math.round(abs).toLocaleString('en-IN');
+        }
+
+        function formatInrFull(val) {
+            const num = Number(val) || 0;
+            return '₹' + Math.round(num).toLocaleString('en-IN');
+        }
+
+        let activeGranularity = 'daily';
+        let hitPoints = [];
+        let hoveredPoint = null;
+        let chartStartTime = performance.now();
+        let granularitySwitchTime = performance.now();
+
+        function easeOutCubic(t) {
+            return 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
+        }
+
+        function drawSmoothCurve(ctx, pts, propY) {
+            if (!pts || pts.length === 0) return;
+            ctx.moveTo(pts[0].x, pts[0][propY]);
+            for (let i = 0; i < pts.length - 1; i++) {
+                const p0 = pts[i];
+                const p1 = pts[i + 1];
+                const cpx1 = p0.x + (p1.x - p0.x) * 0.45;
+                const cpy1 = p0[propY];
+                const cpx2 = p0.x + (p1.x - p0.x) * 0.55;
+                const cpy2 = p1[propY];
+                ctx.bezierCurveTo(cpx1, cpy1, cpx2, cpy2, p1.x, p1[propY]);
+            }
+        }
+
+        let lastW1 = 0, lastH1 = 0;
+        let lastW2 = 0, lastH2 = 0;
+
+        function drawSalesTrendChart(animPhase, entryProgress) {
+            const canvas = document.getElementById('salesTrendCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) return;
+
+            const curW = Math.round(rect.width * dpr);
+            const curH = Math.round(rect.height * dpr);
+            if (Math.abs(canvas.width - curW) > 2 || Math.abs(canvas.height - curH) > 2) {
+                canvas.width = curW;
+                canvas.height = curH;
+            }
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            const width = rect.width;
+            const height = rect.height;
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const phase = animPhase || 0;
+            const ep = entryProgress !== undefined ? entryProgress : 1;
+
+            const series = chartData[activeGranularity] || chartData.daily;
+            const labels = series.labels || [];
+            const revValues = (series.revenue || []).map(Number);
+            const expValues = (series.expenses || []).map(Number);
+
+            ctx.clearRect(0, 0, width, height);
+
+            const padLeft = 66;
+            const padRight = 24;
+            const padTop = 26;
+            const padBottom = 38;
+            const plotW = Math.max(10, width - padLeft - padRight);
+            const plotH = Math.max(10, height - padTop - padBottom);
+
+            const allVals = chartData.showExpenses ? revValues.concat(expValues) : revValues;
+            const rawMax = Math.max(0, ...allVals);
+            const maxVal = Math.max(1000, rawMax) * 1.18;
+
+            // Update telemetry strip badges
+            const peakValue = revValues.length ? Math.max(0, ...revValues) : 0;
+            const sumRev = revValues.reduce((a, b) => a + b, 0);
+            const avgValue = revValues.length ? (sumRev / revValues.length) : 0;
+            const peakEl = document.getElementById('salesChartPeakLabel');
+            const avgEl = document.getElementById('salesChartAvgLabel');
+            if (peakEl) peakEl.textContent = formatInrShort(peakValue);
+            if (avgEl) avgEl.textContent = formatInrShort(avgValue);
+
+            // 1. Detailed Horizontal & Vertical Sub-Grid Matrix
+            const gridColor = isDark ? 'rgba(51, 65, 85, 0.7)' : 'rgba(226, 232, 240, 0.9)';
+            const subGridColor = isDark ? 'rgba(51, 65, 85, 0.32)' : 'rgba(226, 232, 240, 0.45)';
+            const textColor = isDark ? '#94a3b8' : '#64748b';
+            ctx.font = '600 10.5px Plus Jakarta Sans, Inter, system-ui, sans-serif';
+            ctx.fillStyle = textColor;
+
+            const steps = 4;
+            for (let i = 0; i <= steps; i++) {
+                const y = padTop + (plotH / steps) * i;
+                const val = maxVal - (maxVal / steps) * i;
+                ctx.beginPath();
+                ctx.strokeStyle = gridColor;
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 4]);
+                ctx.moveTo(padLeft, y);
+                ctx.lineTo(width - padRight, y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.textAlign = 'right';
+                ctx.fillText(formatInrShort(val), padLeft - 8, y + 4);
+            }
+
+            if (labels.length === 0) return;
+
+            const stepX = labels.length > 1 ? plotW / (labels.length - 1) : plotW / 2;
+            const vStride = Math.max(1, Math.ceil(labels.length / 8));
+            for (let i = 0; i < labels.length; i += vStride) {
+                const vx = labels.length > 1 ? padLeft + i * stepX : padLeft + plotW / 2;
+                ctx.beginPath();
+                ctx.strokeStyle = subGridColor;
+                ctx.lineWidth = 1;
+                ctx.moveTo(vx, padTop);
+                ctx.lineTo(vx, padTop + plotH);
+                ctx.stroke();
+            }
+
+            hitPoints = [];
+            let peakIdx = 0;
+            let bestRev = -1;
+
+            const points = labels.map((lbl, idx) => {
+                const x = labels.length > 1 ? padLeft + idx * stepX : padLeft + plotW / 2;
+                const rVal = revValues[idx] || 0;
+                const eVal = expValues[idx] || 0;
+                if (rVal > bestRev) { bestRev = rVal; peakIdx = idx; }
+
+                // Subtle continuous breathing wave on the curve points
+                const wave = Math.sin(phase * 2.2 + idx * 0.75) * 2.4 + Math.cos(phase * 1.4 + idx * 1.1) * 1.1;
+                const baseRevH = (rVal / maxVal) * plotH * ep;
+                const baseExpH = (eVal / maxVal) * plotH * ep;
+
+                const yRev = Math.min(padTop + plotH, Math.max(padTop + 4, padTop + plotH - baseRevH + wave * 0.65));
+                const yExp = Math.min(padTop + plotH, Math.max(padTop + 4, padTop + plotH - baseExpH - wave * 0.45));
+                const ptObj = { x, yRev, yExp, label: lbl, revenue: rVal, expense: eVal, idx };
+                hitPoints.push(ptObj);
+                return ptObj;
+            });
+
+            // 2. Benchmark Average Reference Line
+            if (avgValue > 0) {
+                const avgY = padTop + plotH - ((avgValue / maxVal) * plotH * ep);
+                ctx.save();
+                ctx.beginPath();
+                ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.45)' : 'rgba(14, 165, 233, 0.45)';
+                ctx.lineWidth = 1.2;
+                ctx.setLineDash([6, 4]);
+                ctx.moveTo(padLeft, avgY);
+                ctx.lineTo(width - padRight, avgY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = isDark ? 'rgba(14, 165, 233, 0.22)' : 'rgba(14, 165, 233, 0.14)';
+                ctx.beginPath();
+                ctx.roundRect(width - padRight - 82, avgY - 17, 80, 15, 4);
+                ctx.fill();
+                ctx.fillStyle = isDark ? '#38bdf8' : '#0284c7';
+                ctx.font = '700 9.5px Plus Jakarta Sans, sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText('AVG ' + formatInrShort(avgValue), width - padRight - 6, avgY - 6);
+                ctx.restore();
+            }
+
+            // 3. Smooth Cubic Bezier Area Fill under Revenue Curve
+            const grad = ctx.createLinearGradient(0, padTop, 0, padTop + plotH);
+            grad.addColorStop(0, isDark ? 'rgba(56, 189, 248, 0.36)' : 'rgba(37, 99, 235, 0.26)');
+            grad.addColorStop(0.6, isDark ? 'rgba(37, 99, 235, 0.12)' : 'rgba(56, 189, 248, 0.08)');
+            grad.addColorStop(1, 'rgba(37, 99, 235, 0.0)');
+
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, padTop + plotH);
+            ctx.lineTo(points[0].x, points[0].yRev);
+            for (let i = 0; i < points.length - 1; i++) {
+                const p0 = points[i], p1 = points[i + 1];
+                ctx.bezierCurveTo(p0.x + (p1.x - p0.x) * 0.45, p0.yRev, p0.x + (p1.x - p0.x) * 0.55, p1.yRev, p1.x, p1.yRev);
+            }
+            ctx.lineTo(points[points.length - 1].x, padTop + plotH);
+            ctx.closePath();
+            ctx.fillStyle = grad;
+            ctx.fill();
+
+            // 4. Draw Smooth Expenses Curve if authorized
+            if (chartData.showExpenses && expValues.length > 0) {
+                ctx.beginPath();
+                drawSmoothCurve(ctx, points, 'yExp');
+                ctx.strokeStyle = '#f59e0b';
+                ctx.lineWidth = 2.1;
+                ctx.setLineDash([5, 4]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // 5. Draw Glowing Smooth Revenue Curve
+            ctx.save();
+            ctx.beginPath();
+            drawSmoothCurve(ctx, points, 'yRev');
+            ctx.strokeStyle = isDark ? '#38bdf8' : '#2563eb';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = isDark ? 'rgba(56, 189, 248, 0.55)' : 'rgba(37, 99, 235, 0.35)';
+            ctx.shadowBlur = 10;
+            ctx.stroke();
+            ctx.restore();
+
+            // 6. Traveling Telemetry Laser Scanner & Comet Node along the Curve
+            if (points.length > 1) {
+                const tCycle = (phase * 0.16) % 1;
+                const totalSegs = points.length - 1;
+                const exact = tCycle * totalSegs;
+                const sIdx = Math.min(totalSegs - 1, Math.floor(exact));
+                const frac = exact - sIdx;
+                const pA = points[sIdx], pB = points[sIdx + 1];
+                const scanX = pA.x + (pB.x - pA.x) * frac;
+                const scanY = pA.yRev + (pB.yRev - pA.yRev) * frac;
+
+                // Vertical scan beam
+                const scanGrad = ctx.createLinearGradient(0, padTop, 0, padTop + plotH);
+                scanGrad.addColorStop(0, 'rgba(56, 189, 248, 0)');
+                scanGrad.addColorStop(0.5, 'rgba(56, 189, 248, 0.35)');
+                scanGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+                ctx.beginPath();
+                ctx.strokeStyle = scanGrad;
+                ctx.lineWidth = 1.5;
+                ctx.moveTo(scanX, padTop);
+                ctx.lineTo(scanX, padTop + plotH);
+                ctx.stroke();
+
+                // Glowing comet dot on curve
+                ctx.beginPath();
+                ctx.arc(scanX, scanY, 6 + Math.sin(phase * 5) * 1.8, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(scanX, scanY, 3.5, 0, Math.PI * 2);
+                ctx.fillStyle = '#38bdf8';
+                ctx.fill();
+            }
+
+            // 7. Draw Data Nodes, Peak Callout & X-axis Labels
+            const labelStride = Math.max(1, Math.ceil(points.length / 8));
+            points.forEach((p, idx) => {
+                const isHovered = hoveredPoint && hoveredPoint.idx === idx;
+                const isPeak = idx === peakIdx && bestRev > 0;
+
+                if (isHovered) {
+                    // Interactive Crosshair lines
+                    ctx.save();
+                    ctx.strokeStyle = isDark ? 'rgba(148, 163, 184, 0.45)' : 'rgba(100, 116, 139, 0.35)';
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([3, 3]);
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, padTop);
+                    ctx.lineTo(p.x, padTop + plotH);
+                    ctx.moveTo(padLeft, p.yRev);
+                    ctx.lineTo(width - padRight, p.yRev);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // Pulsing outer ring on Peak or Hovered point
+                if (isPeak || isHovered) {
+                    ctx.beginPath();
+                    const pulseR = (isHovered ? 8 : 6.5) + Math.sin(phase * 4) * 1.8;
+                    ctx.arc(p.x, p.yRev, pulseR, 0, Math.PI * 2);
+                    ctx.fillStyle = isPeak ? 'rgba(16, 185, 129, 0.22)' : 'rgba(37, 99, 235, 0.22)';
+                    ctx.fill();
+                }
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.yRev, isHovered ? 5 : (isPeak ? 4.2 : 3.2), 0, Math.PI * 2);
+                ctx.fillStyle = isPeak ? '#10b981' : (isDark ? '#0f172a' : '#ffffff');
+                ctx.fill();
+                ctx.strokeStyle = isPeak ? '#059669' : (isDark ? '#38bdf8' : '#2563eb');
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Peak Callout Pill directly on graph
+                if (isPeak) {
+                    const badgeText = '▲ PEAK ' + formatInrShort(p.revenue);
+                    ctx.save();
+                    ctx.font = '700 9.5px Plus Jakarta Sans, sans-serif';
+                    const tw = ctx.measureText(badgeText).width + 12;
+                    const bx = Math.min(width - padRight - tw, Math.max(padLeft, p.x - tw / 2));
+                    const by = Math.max(4, p.yRev - 24);
+                    ctx.fillStyle = isDark ? 'rgba(6, 78, 59, 0.9)' : 'rgba(209, 250, 229, 0.95)';
+                    ctx.strokeStyle = '#10b981';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.roundRect(bx, by, tw, 17, 5);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.fillStyle = isDark ? '#34d399' : '#065f46';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(badgeText, bx + tw / 2, by + 11.5);
+                    ctx.restore();
+                }
+
+                if (idx % labelStride === 0 || idx === points.length - 1) {
+                    ctx.fillStyle = textColor;
+                    ctx.font = '600 10.5px Plus Jakarta Sans, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(p.label, p.x, height - 12);
+                }
+            });
+        }
+
+        function drawPnlComparisonChart(animPhase, entryProgress) {
+            const canvas = document.getElementById('pnlComparisonCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) return;
+
+            const curW = Math.round(rect.width * dpr);
+            const curH = Math.round(rect.height * dpr);
+            if (Math.abs(canvas.width - curW) > 2 || Math.abs(canvas.height - curH) > 2) {
+                canvas.width = curW;
+                canvas.height = curH;
+            }
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            const width = rect.width;
+            const height = rect.height;
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const textColor = isDark ? '#cbd5e1' : '#475569';
+            const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
+            const phase = animPhase || 0;
+            const ep = entryProgress !== undefined ? entryProgress : 1;
+
+            const revTotal = Number(chartData.pnl.revenue) || 0;
+            const netProfitVal = Number(chartData.pnl.netProfit) || 0;
+            const isLoss = netProfitVal < 0;
+
+            const bars = [
+                { label: 'Revenue', val: revTotal, color: '#2563eb', topColor: '#60a5fa' },
+                { label: 'COGS', val: Number(chartData.pnl.cogs) || 0, color: '#64748b', topColor: '#94a3b8' },
+                { label: 'Gross Profit', val: Number(chartData.pnl.grossProfit) || 0, color: '#0ea5e9', topColor: '#38bdf8' },
+                { label: 'Expenses', val: Number(chartData.pnl.expenses) || 0, color: '#f59e0b', topColor: '#fbbf24' },
+                { label: isLoss ? 'Net Loss' : 'Net Profit', val: netProfitVal, color: isLoss ? '#ef4444' : '#10b981', topColor: isLoss ? '#f87171' : '#34d399' }
+            ];
+
+            const maxPositive = Math.max(1000, ...bars.map(b => Math.max(0, b.val)));
+            const maxNegative = Math.max(0, ...bars.map(b => b.val < 0 ? Math.abs(b.val) : 0));
+
+            const padTop = 28;
+            const padBottom = 28;
+            const totalPlotH = Math.max(20, height - padTop - padBottom);
+
+            let zeroY;
+            if (maxNegative > 0) {
+                const totalRange = maxPositive + maxNegative;
+                zeroY = padTop + (maxPositive / totalRange) * totalPlotH;
+            } else {
+                zeroY = padTop + totalPlotH;
+            }
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Subtle reference horizontal lines
+            for (let g = 0.25; g <= 0.75; g += 0.25) {
+                const gy = padTop + totalPlotH * g;
+                ctx.beginPath();
+                ctx.strokeStyle = gridColor;
+                ctx.setLineDash([3, 3]);
+                ctx.moveTo(10, gy);
+                ctx.lineTo(width - 10, gy);
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
+
+            // Draw zero baseline
+            ctx.strokeStyle = isDark ? 'rgba(148, 163, 184, 0.35)' : 'rgba(100, 116, 139, 0.28)';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.moveTo(10, zeroY);
+            ctx.lineTo(width - 10, zeroY);
+            ctx.stroke();
+
+            ctx.font = '600 10px Plus Jakarta Sans, Inter, system-ui, sans-serif';
+            const colW = width / bars.length;
+            const barRects = [];
+
+            bars.forEach((b, i) => {
+                const barW = Math.min(44, colW * 0.56);
+                const x = i * colW + (colW - barW) / 2;
+                const breathe = 1 + Math.sin(phase * 2.5 + i * 0.9) * 0.025;
+
+                let barH, y;
+                if (b.val >= 0) {
+                    barH = maxPositive > 0 ? (b.val / maxPositive) * (zeroY - padTop) * ep * breathe : 4;
+                    barH = Math.max(b.val > 0 ? 5 : 2, barH);
+                    y = zeroY - barH;
+                } else {
+                    const belowZeroH = (padTop + totalPlotH) - zeroY;
+                    barH = maxNegative > 0 ? (Math.abs(b.val) / maxNegative) * belowZeroH * ep * breathe : 4;
+                    barH = Math.max(5, barH);
+                    y = zeroY;
+                }
+
+                barRects.push({ x, y, barW, barH, val: b.val });
+
+                // Dashed waterfall connector from previous bar
+                if (i > 0) {
+                    const prev = barRects[i - 1];
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.strokeStyle = isDark ? 'rgba(148, 163, 184, 0.35)' : 'rgba(100, 116, 139, 0.35)';
+                    ctx.setLineDash([2, 2]);
+                    ctx.moveTo(prev.x + prev.barW, prev.y);
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // 3D Vertical Gradient Bar Fill
+                const bGrad = ctx.createLinearGradient(x, y, x, y + barH);
+                bGrad.addColorStop(0, b.topColor);
+                bGrad.addColorStop(1, b.color);
+
+                ctx.fillStyle = bGrad;
+                ctx.beginPath();
+                ctx.roundRect(x, y, barW, barH, 5);
+                ctx.fill();
+
+                // Traveling shimmer band inside bar
+                const shimOffset = ((phase * 0.55 + i * 0.15) % 1);
+                const sy = y + barH * (1 - shimOffset);
+                if (barH > 10) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.roundRect(x, y, barW, barH, 5);
+                    ctx.clip();
+                    const sGrad = ctx.createLinearGradient(0, sy - 10, 0, sy + 10);
+                    sGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
+                    sGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.32)');
+                    sGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                    ctx.fillStyle = sGrad;
+                    ctx.fillRect(x, sy - 10, barW, 20);
+                    ctx.restore();
+                }
+
+                // Value + % Share Labels
+                ctx.fillStyle = textColor;
+                ctx.textAlign = 'center';
+                const pct = revTotal > 0 ? Math.round((Math.abs(b.val) / revTotal) * 100) + '%' : '';
+                if (b.val >= 0) {
+                    ctx.font = '700 10px Plus Jakarta Sans, sans-serif';
+                    ctx.fillText(formatInrShort(b.val), x + barW / 2, Math.max(11, y - 12));
+                    if (pct && i > 0) {
+                        ctx.font = '600 8.5px Plus Jakarta Sans, sans-serif';
+                        ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
+                        ctx.fillText('(' + pct + ')', x + barW / 2, Math.max(20, y - 2));
+                    }
+                } else {
+                    ctx.fillText(formatInrShort(b.val), x + barW / 2, Math.min(height - 10, y + barH + 12));
+                }
+                ctx.fillStyle = textColor;
+                ctx.font = '600 10px Plus Jakarta Sans, sans-serif';
+                ctx.fillText(b.label, x + barW / 2, height - 7);
+            });
+        }
+
+        // Hover tooltip on Sales Revenue Trend Canvas
+        const salesCanvas = document.getElementById('salesTrendCanvas');
+        const tooltip = document.getElementById('salesTrendTooltip');
+        if (salesCanvas && tooltip) {
+            salesCanvas.addEventListener('mousemove', function (e) {
+                const rect = salesCanvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                let closest = null;
+                let minDist = 9999;
+                hitPoints.forEach(p => {
+                    const d = Math.abs(p.x - mx);
+                    if (d < minDist && d < 36) {
+                        minDist = d;
+                        closest = p;
+                    }
+                });
+                hoveredPoint = closest;
+                if (closest) {
+                    const netDelta = closest.revenue - (closest.expense || 0);
+                    let html = '<div class="fw-bold mb-1 border-bottom border-secondary pb-1">' + closest.label + '</div>';
+                    html += '<div>Revenue: <strong class="text-info">' + formatInrFull(closest.revenue) + '</strong></div>';
+                    if (chartData.showExpenses) {
+                        html += '<div>Expenses: <strong class="text-warning">' + formatInrFull(closest.expense) + '</strong></div>';
+                        html += '<div>Net Flow: <strong class="' + (netDelta >= 0 ? 'text-success' : 'text-danger') + '">' + formatInrFull(netDelta) + '</strong></div>';
+                    }
+                    tooltip.innerHTML = html;
+                    tooltip.style.display = 'block';
+                    tooltip.style.left = (e.clientX + 14) + 'px';
+                    tooltip.style.top = (e.clientY - 36) + 'px';
+                } else {
+                    tooltip.style.display = 'none';
+                }
+            });
+            salesCanvas.addEventListener('mouseleave', function () {
+                hoveredPoint = null;
+                tooltip.style.display = 'none';
+            });
+        }
+
+        // Granularity toggle buttons (Daily / Weekly / Monthly)
+        document.querySelectorAll('.exec-granularity-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.exec-granularity-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                activeGranularity = this.getAttribute('data-granularity') || 'daily';
+                granularitySwitchTime = performance.now();
+            });
+        });
+
+        // CSV Export button
+        const exportBtn = document.getElementById('exportDashboardCsvBtn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', function () {
+                const rows = [
+                    ['Metric / Date', 'Sales Revenue (INR)', 'Expenses (INR)']
+                ];
+                const daily = chartData.daily;
+                for (let i = 0; i < (daily.labels || []).length; i++) {
+                    rows.push([
+                        daily.labels[i],
+                        daily.revenue[i] || 0,
+                        chartData.showExpenses ? (daily.expenses[i] || 0) : 'N/A'
+                    ]);
+                }
+                const csvContent = rows.map(r => r.join(',')).join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', 'INVENTRA-pro-dashboard-analytics.csv');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        }
+
+        // Continuous Live Animation Loop for Executive Charts
+        function animateExecutiveCharts(now) {
+            const phase = (now - chartStartTime) * 0.001;
+            const ep = easeOutCubic((now - granularitySwitchTime) / 850);
+            drawSalesTrendChart(phase, ep);
+            drawPnlComparisonChart(phase, ep);
+            requestAnimationFrame(animateExecutiveCharts);
+        }
+
+        requestAnimationFrame(animateExecutiveCharts);
+    })();
+</script>
 </body>
 </html>

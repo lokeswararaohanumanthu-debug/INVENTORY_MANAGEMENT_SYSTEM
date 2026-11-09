@@ -60,6 +60,12 @@ public class Purchase {
     @Column
     private LocalDateTime createdAt;
 
+    @Column(length = 50)
+    private String createdBy;
+
+    @Column(length = 100)
+    private String createdByName;
+
     // ──────────────────────────────────────────────────────────────
     //  Relationships
     // ──────────────────────────────────────────────────────────────
@@ -200,12 +206,42 @@ public class Purchase {
         this.createdAt = createdAt;
     }
 
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public String getCreatedByName() {
+        return createdByName;
+    }
+
+    public void setCreatedByName(String createdByName) {
+        this.createdByName = createdByName;
+    }
+
     public List<PurchaseItem> getItems() {
         return items;
     }
 
     public void setItems(List<PurchaseItem> items) {
         this.items = items;
+    }
+
+    /**
+     * Returns the total quantity of units across all line items in this purchase order.
+     */
+    public int getTotalQuantity() {
+        if (items == null || items.isEmpty()) {
+            return 0;
+        }
+        int sum = 0;
+        for (PurchaseItem item : items) {
+            sum += item.getQuantity();
+        }
+        return sum;
     }
 
     // ──────────────────────────────────────────────────────────────

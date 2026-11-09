@@ -2,96 +2,921 @@
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head></head>
 <body>
-<div th:fragment="sidebar" class="app-sidebar">
-    <a th:href="@{/dashboard}" class="sidebar-brand">
-        <i class="bi bi-phone-fill"></i>
-        <span>MobileZone Pro</span>
+<!--
+    NOTE: The fragment is a th:block so that the sidebar markup, the mobile backdrop AND the
+    accordion script are all emitted by th:replace. (Previously the script lived outside the
+    fragment, so toggleNavGroup() was never sent to the browser and every group click failed.)
+-->
+<th:block th:fragment="sidebar">
+<!-- Animated Ambient Motion Background (Floating Glass Orbs, Grid & Inventory Elements) -->
+<div class="ambient-motion-canvas" aria-hidden="true">
+    <div class="ambient-grid-overlay"></div>
+    <div class="ambient-sleek-beam ambient-sleek-beam-1"></div>
+    <div class="ambient-sleek-beam ambient-sleek-beam-2"></div>
+    <div class="ambient-orb ambient-orb-1"></div>
+    <div class="ambient-orb ambient-orb-2"></div>
+    <div class="ambient-orb ambient-orb-3"></div>
+    <div class="ambient-orb ambient-orb-4"></div>
+
+    <!-- Floating Inventory Management & POS Holographic Background Elements -->
+    <div class="inv-floating-layer">
+        <div class="inv-bg-item inv-bg-item-1">
+            <i class="bi bi-box-seam-fill"></i>
+            <span class="inv-bg-tag"><span>Stock Ledger</span><span class="inv-bg-sub">Live SKU Sync</span></span>
+        </div>
+        <div class="inv-bg-item inv-bg-item-2">
+            <i class="bi bi-upc-scan"></i>
+            <span class="inv-bg-tag"><span>Barcode POS</span><span class="inv-bg-sub">Instant Scan</span></span>
+        </div>
+        <div class="inv-bg-item inv-bg-item-3">
+            <i class="bi bi-graph-up-arrow"></i>
+            <span class="inv-bg-tag"><span>Demand Velocity</span><span class="inv-bg-sub">AI Forecast</span></span>
+        </div>
+        <div class="inv-bg-item inv-bg-item-4">
+            <i class="bi bi-qr-code-scan"></i>
+            <span class="inv-bg-tag"><span>IMEI &amp; Batch</span><span class="inv-bg-sub">Verified Track</span></span>
+        </div>
+        <div class="inv-bg-item inv-bg-item-5">
+            <i class="bi bi-truck"></i>
+            <span class="inv-bg-tag"><span>Supply Chain</span><span class="inv-bg-sub">Vendor Stock-In</span></span>
+        </div>
+        <div class="inv-bg-item inv-bg-item-6">
+            <i class="bi bi-receipt-cutoff"></i>
+            <span class="inv-bg-tag"><span>GST Billing</span><span class="inv-bg-sub">Smart Invoice</span></span>
+        </div>
+        <div class="inv-bg-item inv-bg-item-7">
+            <i class="bi bi-layers-fill"></i>
+            <span class="inv-bg-tag"><span>Warehouse Tiers</span><span class="inv-bg-sub">Multi-Category</span></span>
+        </div>
+        <div class="inv-bg-item inv-bg-item-8">
+            <i class="bi bi-tags-fill"></i>
+            <span class="inv-bg-tag"><span>Catalog Pricing</span><span class="inv-bg-sub">Margin Guard</span></span>
+        </div>
+        <div class="inv-bg-item inv-bg-item-9">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span class="inv-bg-tag"><span>Low-Stock Radar</span><span class="inv-bg-sub">Threshold Alert</span></span>
+        </div>
+        <div class="inv-bg-item inv-bg-item-10">
+            <i class="bi bi-shield-check"></i>
+            <span class="inv-bg-tag"><span>RBAC Governance</span><span class="inv-bg-sub">Audit Secured</span></span>
+        </div>
+        <div class="inv-bg-item inv-bg-item-11">
+            <i class="bi bi-pie-chart-fill"></i>
+            <span class="inv-bg-tag"><span>P&amp;L Accrual</span><span class="inv-bg-sub">Net Margin Live</span></span>
+        </div>
+        <div class="inv-bg-item inv-bg-item-12">
+            <i class="bi bi-cpu-fill"></i>
+            <span class="inv-bg-tag"><span>Smart Reorder</span><span class="inv-bg-sub">Stock Intelligence</span></span>
+        </div>
+    </div>
+</div>
+
+<div class="app-sidebar" id="appSidebar">
+    <a th:href="@{/dashboard}" class="sidebar-brand" title="INVENTRA – Enterprise POS &amp; Inventory">
+        <span class="inventra-logo-mark">
+            <i class="bi bi-boxes"></i>
+        </span>
+        <span class="inventra-brand-stack">
+            <span class="inventra-brand-text">INVENTRA</span>
+            <span class="inventra-brand-tag">Smart POS &amp; Inventory</span>
+        </span>
     </a>
 
-    <ul class="sidebar-nav">
-        <li class="nav-section-title">Core</li>
-        <li>
-            <a th:href="@{/dashboard}" class="nav-link-custom" th:classappend="${activeNav == 'dashboard'} ? 'active' : ''">
+    <ul class="sidebar-nav" id="sidebarNav">
+        <!-- =====================================================================
+             CORE (Always Independently Visible at Top)
+             ===================================================================== -->
+        <li class="nav-section-title" th:if="${@rbac.has('DASHBOARD_VIEW')}">Core</li>
+        <li th:if="${@rbac.has('DASHBOARD_VIEW')}">
+            <a th:href="@{/dashboard}" class="nav-link-custom"
+               th:classappend="${activeNav == 'dashboard'} ? 'active' : ''">
                 <i class="bi bi-grid-1x2-fill"></i>
                 <span>Dashboard</span>
             </a>
         </li>
 
-        <li class="nav-section-title">Showroom Operations</li>
-        <li>
-            <a th:href="@{/sales/billing}" class="nav-link-custom" th:classappend="${activeNav == 'billing'} ? 'active' : ''">
-                <i class="bi bi-receipt"></i>
-                <span>POS & Billing</span>
-            </a>
-        </li>
-        <li>
-            <a th:href="@{/sales}" class="nav-link-custom" th:classappend="${activeNav == 'sales'} ? 'active' : ''">
-                <i class="bi bi-bag-check-fill"></i>
-                <span>Sales Invoices</span>
-            </a>
-        </li>
-        <li>
-            <a th:href="@{/purchases}" class="nav-link-custom" th:classappend="${activeNav == 'purchases'} ? 'active' : ''">
-                <i class="bi bi-truck"></i>
-                <span>Purchases & Stock In</span>
-            </a>
+        <!-- =====================================================================
+             GROUP 1 – SHOWROOM OPERATIONS (Collapsible Accordion)
+             ===================================================================== -->
+        <li class="nav-group" data-nav-group="showroom"
+            th:with="grpOpen=${activeNav == 'pos' or activeNav == 'billing' or activeNav == 'sales' or activeNav == 'purchases'}"
+            th:if="${@rbac.hasAny('SALES_CREATE', 'SALES_VIEW_ALL', 'SALES_VIEW_OWN', 'PURCHASE_VIEW')}"
+            th:classappend="${grpOpen} ? 'is-open' : ''">
+            <button type="button" class="nav-group-header" aria-controls="navGroupBody-showroom"
+                    th:attr="aria-expanded=${grpOpen}">
+                <span>Showroom Operations</span>
+                <i class="bi bi-chevron-down nav-group-chevron"></i>
+            </button>
+            <div class="nav-group-body" id="navGroupBody-showroom" role="region">
+                <div class="nav-group-content">
+                    <!-- 1. POS & Billing (Consolidated with New Bill & Sales Invoices) -->
+                    <div th:if="${@rbac.hasAny('SALES_CREATE', 'SALES_VIEW_ALL', 'SALES_VIEW_OWN')}">
+                        <a th:href="${@rbac.has('SALES_CREATE')} ? @{/sales/billing} : @{/sales}"
+                           class="nav-link-custom"
+                           th:classappend="${activeNav == 'pos' or activeNav == 'billing' or activeNav == 'sales'} ? 'active' : ''">
+                            <i class="bi bi-receipt"></i>
+                            <span>POS &amp; Billing</span>
+                        </a>
+                        <ul class="nav-sub-list">
+                            <li th:if="${@rbac.has('SALES_CREATE')}">
+                                <a th:href="@{/sales/billing}"
+                                   class="nav-sub-link"
+                                   th:classappend="${activeSubNav == 'billing' or activeNav == 'billing'} ? 'active' : ''">
+                                    <i class="bi bi-plus-circle"></i>
+                                    <span>New Bill</span>
+                                </a>
+                            </li>
+                            <li th:if="${@rbac.hasAny('SALES_VIEW_ALL', 'SALES_VIEW_OWN')}">
+                                <a th:href="@{/sales}"
+                                   class="nav-sub-link"
+                                   th:classappend="${activeSubNav == 'history' or (activeNav == 'sales' and activeSubNav != 'billing')} ? 'active' : ''">
+                                    <i class="bi bi-clock-history"></i>
+                                    <span>Sales Invoice History</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- 2. Purchases & Stock-In -->
+                    <div th:if="${@rbac.has('PURCHASE_VIEW')}">
+                        <a th:href="@{/purchases}" class="nav-link-custom"
+                           th:classappend="${activeNav == 'purchases'} ? 'active' : ''">
+                            <i class="bi bi-truck"></i>
+                            <span>Purchases &amp; Stock In</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
         </li>
 
-        <li class="nav-section-title">Inventory & Catalog</li>
-        <li>
-            <a th:href="@{/products}" class="nav-link-custom" th:classappend="${activeNav == 'products'} ? 'active' : ''">
-                <i class="bi bi-boxes"></i>
-                <span>Products Catalog</span>
-            </a>
-        </li>
-        <li>
-            <a th:href="@{/inventory}" class="nav-link-custom" th:classappend="${activeNav == 'inventory'} ? 'active' : ''">
-                <i class="bi bi-archive-fill"></i>
-                <span>Stock Levels</span>
-            </a>
-        </li>
-        <li>
-            <a th:href="@{/inventory/low-stock}" class="nav-link-custom" th:classappend="${activeNav == 'low-stock'} ? 'active' : ''">
-                <i class="bi bi-exclamation-triangle-fill"></i>
-                <span>Low Stock Alerts</span>
-            </a>
-        </li>
-        <li>
-            <a th:href="@{/suppliers}" class="nav-link-custom" th:classappend="${activeNav == 'suppliers'} ? 'active' : ''">
-                <i class="bi bi-people-fill"></i>
-                <span>Suppliers</span>
-            </a>
+        <!-- =====================================================================
+             GROUP 2 – INVENTORY & CATALOG (Collapsible Accordion)
+             ===================================================================== -->
+        <li class="nav-group" data-nav-group="inventory"
+            th:with="grpOpen=${activeNav == 'products' or activeNav == 'inventory' or activeNav == 'low-stock' or activeNav == 'suppliers'}"
+            th:if="${@rbac.hasAny('PRODUCT_VIEW', 'STOCK_VIEW', 'SUPPLIER_VIEW')}"
+            th:classappend="${grpOpen} ? 'is-open' : ''">
+            <button type="button" class="nav-group-header" aria-controls="navGroupBody-inventory"
+                    th:attr="aria-expanded=${grpOpen}">
+                <span>Inventory &amp; Catalog</span>
+                <i class="bi bi-chevron-down nav-group-chevron"></i>
+            </button>
+            <div class="nav-group-body" id="navGroupBody-inventory" role="region">
+                <div class="nav-group-content">
+                    <!-- 1. Products Catalog -->
+                    <div th:if="${@rbac.has('PRODUCT_VIEW')}">
+                        <a th:href="@{/products}" class="nav-link-custom"
+                           th:classappend="${activeNav == 'products'} ? 'active' : ''">
+                            <i class="bi bi-boxes"></i>
+                            <span>Products Catalog</span>
+                        </a>
+                    </div>
+
+                    <!-- 2. Stock Levels (Consolidated with Low Stock Alerts) -->
+                    <div th:if="${@rbac.has('STOCK_VIEW')}">
+                        <a th:href="@{/inventory}" class="nav-link-custom d-flex align-items-center justify-content-between"
+                           th:classappend="${activeNav == 'inventory' or activeNav == 'low-stock'} ? 'active' : ''">
+                            <span class="d-flex align-items-center gap-2">
+                                <i class="bi bi-archive-fill"></i>
+                                <span>Stock Levels</span>
+                            </span>
+                            <span th:if="${lowStockCount != null and lowStockCount > 0}"
+                                  class="badge rounded-pill bg-warning text-dark"
+                                  style="font-size: 0.65rem;"
+                                  th:text="${lowStockCount}">1</span>
+                        </a>
+                        <ul class="nav-sub-list">
+                            <li>
+                                <a th:href="@{/inventory(tab='all')}"
+                                   class="nav-sub-link"
+                                   th:classappend="${(activeNav == 'inventory' or activeNav == 'low-stock') and (activeSubNav == 'all' or activeSubNav == null or activeSubNav == '')} ? 'active' : ''">
+                                    <i class="bi bi-check2-circle"></i>
+                                    <span>All Stock</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a th:href="@{/inventory(tab='low-stock')}"
+                                   class="nav-sub-link"
+                                   th:classappend="${activeSubNav == 'low-stock' or activeNav == 'low-stock'} ? 'active' : ''">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    <span class="d-flex align-items-center justify-content-between flex-grow-1">
+                                        <span>Low Stock Products</span>
+                                        <span th:if="${lowStockCount != null and lowStockCount > 0}"
+                                              class="badge bg-warning text-dark rounded-pill"
+                                              style="font-size: 0.62rem;"
+                                              th:text="${lowStockCount}">1</span>
+                                    </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a th:href="@{/inventory(tab='out-of-stock')}"
+                                   class="nav-sub-link"
+                                   th:classappend="${activeSubNav == 'out-of-stock'} ? 'active' : ''">
+                                    <i class="bi bi-x-circle"></i>
+                                    <span>Out of Stock</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a th:href="@{/inventory(tab='movements')}"
+                                   class="nav-sub-link"
+                                   th:classappend="${activeSubNav == 'movements'} ? 'active' : ''">
+                                    <i class="bi bi-clock-history"></i>
+                                    <span>Stock Movement</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- 3. Suppliers -->
+                    <div th:if="${@rbac.has('SUPPLIER_VIEW')}">
+                        <a th:href="@{/suppliers}" class="nav-link-custom"
+                           th:classappend="${activeNav == 'suppliers'} ? 'active' : ''">
+                            <i class="bi bi-people-fill"></i>
+                            <span>Suppliers</span>
+                        </a>
+                    </div>
+
+                    <!-- 4. Smart Inventory Intelligence -->
+                    <div th:if="${@rbac.has('STOCK_VIEW')}">
+                        <a th:href="@{/inventory(tab='intelligence')}"
+                           class="nav-link-custom d-flex align-items-center justify-content-between"
+                           th:classappend="${activeSubNav == 'intelligence'} ? 'active' : ''">
+                            <span class="d-flex align-items-center gap-2">
+                                <i class="bi bi-cpu-fill text-info"></i>
+                                <span>Smart Inventory Intelligence</span>
+                            </span>
+                            <span class="badge bg-info-subtle text-info border border-info-subtle" style="font-size: 0.65rem;">AI</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
         </li>
 
-        <li class="nav-section-title">Finance & Analytics</li>
-        <li>
-            <a th:href="@{/expenses}" class="nav-link-custom" th:classappend="${activeNav == 'expenses'} ? 'active' : ''">
-                <i class="bi bi-cash-stack"></i>
-                <span>Expense Tracker</span>
-            </a>
+        <!-- =====================================================================
+             GROUP 3 – FINANCE & ANALYTICS (Collapsible Accordion)
+             ===================================================================== -->
+        <li class="nav-group" data-nav-group="finance"
+            th:with="grpOpen=${activeNav == 'expenses' or activeNav == 'reports'}"
+            th:if="${@rbac.hasAny('EXPENSE_VIEW', 'REPORT_PNL_VIEW', 'REPORT_FINANCIAL_VIEW')}"
+            th:classappend="${grpOpen} ? 'is-open' : ''">
+            <button type="button" class="nav-group-header" aria-controls="navGroupBody-finance"
+                    th:attr="aria-expanded=${grpOpen}">
+                <span>Finance &amp; Analytics</span>
+                <i class="bi bi-chevron-down nav-group-chevron"></i>
+            </button>
+            <div class="nav-group-body" id="navGroupBody-finance" role="region">
+                <div class="nav-group-content">
+                    <div th:if="${@rbac.has('EXPENSE_VIEW')}">
+                        <a th:href="@{/expenses}" class="nav-link-custom"
+                           th:classappend="${activeNav == 'expenses'} ? 'active' : ''">
+                            <i class="bi bi-cash-stack"></i>
+                            <span>Expense Tracker</span>
+                        </a>
+                    </div>
+                    <div th:if="${@rbac.hasAny('REPORT_PNL_VIEW', 'REPORT_FINANCIAL_VIEW')}">
+                        <a th:href="@{/reports}" class="nav-link-custom"
+                           th:classappend="${activeNav == 'reports'} ? 'active' : ''">
+                            <i class="bi bi-bar-chart-line-fill"></i>
+                            <span>Reports &amp; P&amp;L</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
         </li>
-        <li>
-            <a th:href="@{/reports}" class="nav-link-custom" th:classappend="${activeNav == 'reports'} ? 'active' : ''">
-                <i class="bi bi-bar-chart-line-fill"></i>
-                <span>Reports & P&L</span>
-            </a>
+
+        <!-- =====================================================================
+             GROUP 4 – GOVERNANCE & SECURITY (Collapsible Accordion)
+             ===================================================================== -->
+        <li class="nav-group" data-nav-group="governance"
+            th:with="grpOpen=${activeNav == 'users' or activeNav == 'approvals' or activeNav == 'activity-logs' or activeNav == 'settings'}"
+            th:if="${@rbac.hasAny('USER_VIEW', 'APPROVAL_VIEW', 'ACTIVITY_LOG_VIEW_ALL', 'ACTIVITY_LOG_VIEW_OWN', 'SETTINGS_VIEW')}"
+            th:classappend="${grpOpen} ? 'is-open' : ''">
+            <button type="button" class="nav-group-header" aria-controls="navGroupBody-governance"
+                    th:attr="aria-expanded=${grpOpen}">
+                <span>Governance &amp; Security</span>
+                <i class="bi bi-chevron-down nav-group-chevron"></i>
+            </button>
+            <div class="nav-group-body" id="navGroupBody-governance" role="region">
+                <div class="nav-group-content">
+                    <div th:if="${@rbac.has('USER_VIEW')}">
+                        <a th:href="@{/users}" class="nav-link-custom"
+                           th:classappend="${activeNav == 'users'} ? 'active' : ''">
+                            <i class="bi bi-shield-lock-fill"></i>
+                            <span>Users &amp; RBAC</span>
+                        </a>
+                    </div>
+                    <div th:if="${@rbac.has('APPROVAL_VIEW')}">
+                        <a th:href="@{/approvals}" class="nav-link-custom d-flex align-items-center justify-content-between"
+                           th:classappend="${activeNav == 'approvals'} ? 'active' : ''">
+                            <span class="d-flex align-items-center gap-2">
+                                <i class="bi bi-check2-square"></i>
+                                <span>Approvals</span>
+                            </span>
+                            <span th:if="${pendingApprovalsCount != null and pendingApprovalsCount > 0}"
+                                  class="badge rounded-pill bg-warning text-dark"
+                                  style="font-size: 0.68rem;"
+                                  th:text="${pendingApprovalsCount}">1</span>
+                        </a>
+                    </div>
+                    <div th:if="${@rbac.hasAny('ACTIVITY_LOG_VIEW_ALL', 'ACTIVITY_LOG_VIEW_OWN')}">
+                        <a th:href="@{/activity-logs}" class="nav-link-custom"
+                           th:classappend="${activeNav == 'activity-logs'} ? 'active' : ''">
+                            <i class="bi bi-journal-text"></i>
+                            <span>Activity Audit Logs</span>
+                        </a>
+                    </div>
+                    <div th:if="${@rbac.has('SETTINGS_VIEW')}">
+                        <a th:href="@{/settings}" class="nav-link-custom"
+                           th:classappend="${activeNav == 'settings'} ? 'active' : ''">
+                            <i class="bi bi-sliders2"></i>
+                            <span>System Settings</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
         </li>
     </ul>
 
+    <!-- =====================================================================
+         SIDEBAR FOOTER: AUTHENTICATED USER IDENTITY & ACTIONS
+         ===================================================================== -->
     <div class="sidebar-footer">
-        <div class="user-info">
-            <div class="user-avatar">A</div>
-            <div>
-                <div class="fw-bold" style="font-size: 0.85rem;" sec:authentication="name">Admin</div>
-                <div style="font-size: 0.725rem; color: #94a3b8;">Administrator</div>
+        <div class="user-info overflow-hidden">
+            <div class="user-avatar flex-shrink-0"
+                 th:text="${currentUser != null and currentUser.fullName != null and !currentUser.fullName.isEmpty() ? #strings.substring(currentUser.fullName, 0, 1).toUpperCase() : 'U'}">A</div>
+            <div class="text-truncate">
+                <div class="fw-bold text-truncate" style="font-size: 0.84rem;"
+                     th:text="${currentUser != null ? currentUser.fullName : 'Authenticated User'}">Employee Name</div>
+                <div style="font-size: 0.72rem; color: #38bdf8;" class="fw-semibold text-truncate"
+                     th:text="${currentUser != null ? currentUser.role.displayName : 'Staff'}">Role</div>
+                <div style="font-size: 0.68rem; color: #94a3b8;" class="font-monospace text-truncate"
+                     th:text="${currentUser != null ? '@' + currentUser.username : ''}">@user</div>
             </div>
         </div>
-        <form th:action="@{/logout}" method="post" class="m-0">
-            <button type="submit" class="btn btn-sm btn-outline-light border-0" title="Logout">
-                <i class="bi bi-box-arrow-right"></i>
-            </button>
-        </form>
+        <div class="d-flex align-items-center gap-1 flex-shrink-0">
+            <a th:href="@{/profile/change-password}" class="btn btn-sm btn-outline-light border-0 px-2" title="Change Password">
+                <i class="bi bi-key"></i>
+            </a>
+            <form th:action="@{/logout}" method="post" class="m-0">
+                <button type="submit" class="btn btn-sm btn-outline-light border-0 px-2" title="Sign Out">
+                    <i class="bi bi-box-arrow-right"></i>
+                </button>
+            </form>
+        </div>
     </div>
 </div>
+
+<!-- Sidebar Backdrop for Mobile Screens -->
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+<script>
+/*
+ * INVENTRA – Sidebar accordion controller.
+ * - Single source of truth: one expanded group id (showroom | inventory | finance | governance | null).
+ * - One delegated click listener on the nav list (no inline handlers, no duplicate listeners).
+ * - Pure class toggling: no timers, no DOM rebuilds, no network calls, no page reloads.
+ * - Initial state comes from the server-rendered `is-open` class (active page's parent group),
+ *   so a browser refresh always re-derives the correct group from the current route.
+ */
+(function () {
+    if (window.__mzSidebarInit) { return; }
+    window.__mzSidebarInit = true;
+
+    var nav = document.getElementById('sidebarNav');
+    var sidebar = document.getElementById('appSidebar');
+    var backdrop = document.getElementById('sidebarBackdrop');
+    if (!nav) { return; }
+
+    var groups = Array.prototype.slice.call(nav.querySelectorAll('.nav-group[data-nav-group]'));
+    var expandedGroup = null;
+    groups.forEach(function (g) {
+        if (g.classList.contains('is-open') && expandedGroup === null) { expandedGroup = g.getAttribute('data-nav-group'); }
+    });
+
+    function render() {
+        for (var i = 0; i < groups.length; i++) {
+            var g = groups[i];
+            var open = g.getAttribute('data-nav-group') === expandedGroup;
+            if (g.classList.contains('is-open') !== open) { g.classList.toggle('is-open', open); }
+            var btn = g.querySelector('.nav-group-header');
+            if (btn) { btn.setAttribute('aria-expanded', open ? 'true' : 'false'); }
+        }
+    }
+
+    function toggleGroup(id) {
+        expandedGroup = (expandedGroup === id) ? null : id;
+        render();
+    }
+
+    nav.addEventListener('click', function (e) {
+        var header = e.target.closest ? e.target.closest('.nav-group-header') : null;
+        if (!header || !nav.contains(header)) { return; }
+        e.preventDefault();
+        var group = header.closest('.nav-group');
+        if (group) { toggleGroup(group.getAttribute('data-nav-group')); }
+    });
+
+    render();
+
+    /* ---------- Mobile & Desktop Sidebar Open/Close Toggle ---------- */
+    function setMobileOpen(open) {
+        if (!sidebar || !backdrop) { return; }
+        sidebar.classList.toggle('show-mobile', open);
+        backdrop.classList.toggle('show', open);
+    }
+
+    function applyDesktopSidebarState(collapsed) {
+        document.body.classList.toggle('sidebar-collapsed', !!collapsed);
+        var btn = document.getElementById('sidebarCollapseToggleBtn');
+        if (btn) {
+            btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            btn.setAttribute('title', collapsed ? 'Open Navigation Sidebar' : 'Close Navigation Sidebar');
+        }
+    }
+
+    try {
+        if (localStorage.getItem('inventra_sidebar_collapsed') === '1' && window.innerWidth >= 992) {
+            applyDesktopSidebarState(true);
+        }
+    } catch (e) {}
+
+    var sidebarToggleLock = false;
+    window.toggleMobileSidebar = function () {
+        if (sidebarToggleLock) { return; }
+        sidebarToggleLock = true;
+        setTimeout(function () {
+            sidebarToggleLock = false;
+            try { window.dispatchEvent(new Event('resize')); } catch (e) {}
+        }, 300);
+
+        if (window.innerWidth >= 992) {
+            var nextCollapsed = !document.body.classList.contains('sidebar-collapsed');
+            applyDesktopSidebarState(nextCollapsed);
+            try { localStorage.setItem('inventra_sidebar_collapsed', nextCollapsed ? '1' : '0'); } catch (e) {}
+        } else {
+            setMobileOpen(!(sidebar && sidebar.classList.contains('show-mobile')));
+        }
+    };
+    window.closeMobileSidebar = function () { setMobileOpen(false); };
+    /* Backward-compatible global (old markup used onclick="toggleNavGroup(this)"). */
+    window.toggleNavGroup = function (headerBtn) {
+        var group = headerBtn && headerBtn.closest ? headerBtn.closest('.nav-group') : null;
+        if (group) { toggleGroup(group.getAttribute('data-nav-group')); }
+    };
+
+    /* ---------- Universal Card & Dashboard Section Open/Close Toggles ---------- */
+    function initCollapsibleCards() {
+        var headers = document.querySelectorAll('.exec-chart-header, .content-card-header');
+        for (var i = 0; i < headers.length; i++) {
+            var hdr = headers[i];
+            if (hdr.querySelector('.card-collapse-toggle-btn')) { continue; }
+            var parentCard = hdr.closest('.exec-chart-card, .content-card, .card');
+            if (!parentCard) { continue; }
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'card-collapse-toggle-btn ms-2';
+            btn.title = 'Open / Close Panel';
+            btn.setAttribute('aria-label', 'Toggle panel open or closed');
+            btn.innerHTML = '<i class="bi bi-chevron-up"></i>';
+            btn.addEventListener('click', (function (cardEl) {
+                return function (ev) {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    cardEl.classList.toggle('is-card-collapsed');
+                    setTimeout(function () {
+                        try { window.dispatchEvent(new Event('resize')); } catch (e) {}
+                    }, 300);
+                };
+            })(parentCard));
+            hdr.appendChild(btn);
+        }
+    }
+
+    window.toggleDashboardSection = function (sectionId, pillBtn) {
+        var sec = document.getElementById(sectionId);
+        if (!sec) { return; }
+        var isCollapsed = sec.classList.toggle('section-collapsed');
+        if (pillBtn) {
+            pillBtn.classList.toggle('is-active', !isCollapsed);
+        }
+    };
+
+    window.toggleAllInventraPanels = function (masterBtn) {
+        var sections = document.querySelectorAll('.inventra-collapsible-section');
+        var cards = document.querySelectorAll('.exec-chart-card, .content-card');
+        var anyOpen = false;
+        if (sections.length > 0) {
+            for (var s = 0; s < sections.length; s++) {
+                if (!sections[s].classList.contains('section-collapsed')) { anyOpen = true; break; }
+            }
+            for (var j = 0; j < sections.length; j++) {
+                sections[j].classList.toggle('section-collapsed', anyOpen);
+            }
+            var pills = document.querySelectorAll('.dash-toggle-pill[data-target-section]');
+            for (var p = 0; p < pills.length; p++) {
+                pills[p].classList.toggle('is-active', !anyOpen);
+            }
+        } else {
+            for (var c = 0; c < cards.length; c++) {
+                if (!cards[c].classList.contains('is-card-collapsed')) { anyOpen = true; break; }
+            }
+            for (var k = 0; k < cards.length; k++) {
+                cards[k].classList.toggle('is-card-collapsed', anyOpen);
+            }
+        }
+        if (masterBtn) {
+            var lbl = masterBtn.querySelector('.master-toggle-label');
+            var icn = masterBtn.querySelector('i');
+            if (lbl) { lbl.textContent = anyOpen ? 'Open All Panels' : 'Close All Panels'; }
+            if (icn) { icn.className = anyOpen ? 'bi bi-arrows-angle-expand' : 'bi bi-arrows-angle-contract'; }
+        }
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCollapsibleCards);
+    } else {
+        initCollapsibleCards();
+    }
+
+    if (backdrop) { backdrop.addEventListener('click', window.closeMobileSidebar); }
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { window.closeMobileSidebar(); }
+    });
+    if (window.matchMedia) {
+        var mq = window.matchMedia('(min-width: 992px)');
+        var onChange = function (ev) { if (ev.matches) { window.closeMobileSidebar(); } };
+        if (mq.addEventListener) { mq.addEventListener('change', onChange); } else if (mq.addListener) { mq.addListener(onChange); }
+    }
+
+    /* ---------- Cursor-Following Tile Spotlight & 3D Parallax Tilt ---------- */
+    var TILE_SELECTOR = [
+        '.exec-kpi-card',
+        '.exec-chart-card',
+        '.exec-filter-bar',
+        '.metric-card',
+        '.content-card',
+        '.pos-card',
+        '.pos-method-tab',
+        '.sales-kpi-card',
+        '.sales-period-bar',
+        '.vendor-summary-card',
+        '.report-filter-card',
+        '.pnl-metric-card',
+        '.sold-item-card',
+        '.invoice-detail-panel',
+        '.card'
+    ].join(',');
+
+    var TILT_SELECTOR = '.exec-kpi-card, .metric-card, .sales-kpi-card, .vendor-summary-card, .pnl-metric-card';
+    var activeTiltEl = null;
+
+    document.addEventListener('pointermove', function (e) {
+        var target = e.target && e.target.closest ? e.target.closest(TILE_SELECTOR) : null;
+        if (!target) {
+            if (activeTiltEl) {
+                activeTiltEl.classList.remove('is-tilting');
+                activeTiltEl.style.setProperty('--tilt-x', '0deg');
+                activeTiltEl.style.setProperty('--tilt-y', '0deg');
+                activeTiltEl = null;
+            }
+            return;
+        }
+        var rect = target.getBoundingClientRect();
+        var mx = e.clientX - rect.left;
+        var my = e.clientY - rect.top;
+        target.style.setProperty('--mouse-x', mx + 'px');
+        target.style.setProperty('--mouse-y', my + 'px');
+
+        var tiltCard = e.target.closest ? e.target.closest(TILT_SELECTOR) : null;
+        if (activeTiltEl && activeTiltEl !== tiltCard) {
+            activeTiltEl.classList.remove('is-tilting');
+            activeTiltEl.style.setProperty('--tilt-x', '0deg');
+            activeTiltEl.style.setProperty('--tilt-y', '0deg');
+            activeTiltEl = null;
+        }
+        if (tiltCard) {
+            var tr = tiltCard.getBoundingClientRect();
+            var rx = (((e.clientY - tr.top) / tr.height) - 0.5) * -7;
+            var ry = (((e.clientX - tr.left) / tr.width) - 0.5) * 7;
+            tiltCard.style.setProperty('--tilt-x', rx.toFixed(2) + 'deg');
+            tiltCard.style.setProperty('--tilt-y', ry.toFixed(2) + 'deg');
+            tiltCard.classList.add('is-tilting');
+            activeTiltEl = tiltCard;
+        }
+    }, { passive: true });
+
+    /* ---------- Universal Click Ripple Effect ---------- */
+    var RIPPLE_SELECTOR = '.btn, .nav-link-custom, .nav-group-header, .dash-toggle-pill, .exec-period-pill, .exec-granularity-btn, .pos-method-tab, .theme-toggle-btn, .sidebar-toggle-btn, .card-collapse-toggle-btn';
+    document.addEventListener('pointerdown', function (e) {
+        var host = e.target && e.target.closest ? e.target.closest(RIPPLE_SELECTOR) : null;
+        if (!host) { return; }
+        host.classList.add('inventra-ripple-host');
+        var rect = host.getBoundingClientRect();
+        var size = Math.max(rect.width, rect.height, 36);
+        var wave = document.createElement('span');
+        wave.className = 'inventra-ripple-wave';
+        wave.style.width = wave.style.height = size + 'px';
+        wave.style.left = (e.clientX - rect.left - size / 2) + 'px';
+        wave.style.top = (e.clientY - rect.top - size / 2) + 'px';
+        host.appendChild(wave);
+        setTimeout(function () { if (wave.parentNode) { wave.parentNode.removeChild(wave); } }, 680);
+    }, { passive: true });
+
+    /* ---------- Scroll-Linked Fade, Loading Shimmer, Typing Placeholders & Success Flourish ---------- */
+    function initInventraRichEffects() {
+        /* 1. Initial Loading Shimmer Sweep on KPI & Chart Cards */
+        var shimmerTargets = document.querySelectorAll('.exec-kpi-card, .metric-card, .sales-kpi-card, .vendor-summary-card, .pnl-metric-card, .exec-chart-card');
+        for (var s = 0; s < shimmerTargets.length; s++) {
+            shimmerTargets[s].classList.add('inventra-loading-shimmer');
+            (function (el) {
+                setTimeout(function () { el.classList.remove('inventra-loading-shimmer'); }, 950);
+            })(shimmerTargets[s]);
+        }
+
+        /* 2. Scroll-Linked Fade & Glide Reveal */
+        if ('IntersectionObserver' in window) {
+            var scrollCandidates = document.querySelectorAll('.exec-chart-card, .content-card, .pos-card, .table-custom, .report-filter-card');
+            var io = new IntersectionObserver(function (entries) {
+                for (var eIdx = 0; eIdx < entries.length; eIdx++) {
+                    if (entries[eIdx].isIntersecting) {
+                        entries[eIdx].target.classList.add('is-in-view');
+                        io.unobserve(entries[eIdx].target);
+                    }
+                }
+            }, { threshold: 0.06, rootMargin: '0px 0px -24px 0px' });
+
+            for (var c = 0; c < scrollCandidates.length; c++) {
+                var el = scrollCandidates[c];
+                var r = el.getBoundingClientRect();
+                if (r.top > window.innerHeight * 0.92) {
+                    el.classList.add('inventra-scroll-reveal');
+                    io.observe(el);
+                }
+            }
+        }
+
+        /* 3. Celebratory Success Flourish Particle Burst on .alert-success */
+        var successAlerts = document.querySelectorAll('.alert-success');
+        var colors = ['#10b981', '#38bdf8', '#2563eb', '#f59e0b', '#a855f7'];
+        for (var a = 0; a < successAlerts.length; a++) {
+            var banner = successAlerts[a];
+            banner.classList.add('inventra-success-flourish');
+            for (var p = 0; p < 14; p++) {
+                var dot = document.createElement('span');
+                dot.className = 'flourish-particle';
+                dot.style.left = (12 + Math.random() * 76) + '%';
+                dot.style.top = (25 + Math.random() * 50) + '%';
+                dot.style.background = colors[p % colors.length];
+                dot.style.setProperty('--tx', ((Math.random() - 0.5) * 90).toFixed(1) + 'px');
+                dot.style.setProperty('--ty', ((Math.random() - 0.5) * 55).toFixed(1) + 'px');
+                banner.appendChild(dot);
+                (function (d) {
+                    setTimeout(function () { if (d.parentNode) { d.parentNode.removeChild(d); } }, 1050);
+                })(dot);
+            }
+        }
+
+        /* 4. Dynamic Typing Placeholder on Search & Filter Inputs */
+        var searchInputs = document.querySelectorAll(
+            'input[type="search"], input[name="search"], input[name="keyword"], input[name="q"], #productSearchInput, #posSearchInput, input[placeholder*="Search" i]'
+        );
+        var defaultPhrases = [
+            'Search SKU, brand, model or barcode...',
+            'Type product name or category to filter...',
+            'Instant INVENTRA catalog & stock lookup...'
+        ];
+        for (var i = 0; i < searchInputs.length; i++) {
+            (function (inp) {
+                if (inp.dataset.boundTypewriter) { return; }
+                inp.dataset.boundTypewriter = 'true';
+                var orig = inp.getAttribute('placeholder') || defaultPhrases[0];
+                var phrases = [orig, defaultPhrases[0], defaultPhrases[1], defaultPhrases[2]];
+                var pIdx = 0, cIdx = 0, deleting = false;
+                function step() {
+                    if (document.activeElement === inp || inp.value.length > 0) {
+                        setTimeout(step, 1400);
+                        return;
+                    }
+                    var phrase = phrases[pIdx];
+                    if (!deleting) {
+                        cIdx++;
+                        inp.setAttribute('placeholder', phrase.slice(0, cIdx));
+                        if (cIdx >= phrase.length) {
+                            deleting = true;
+                            setTimeout(step, 2000);
+                            return;
+                        }
+                        setTimeout(step, 52);
+                    } else {
+                        cIdx--;
+                        inp.setAttribute('placeholder', phrase.slice(0, Math.max(cIdx, 1)));
+                        if (cIdx <= 1) {
+                            deleting = false;
+                            pIdx = (pIdx + 1) % phrases.length;
+                            setTimeout(step, 350);
+                            return;
+                        }
+                        setTimeout(step, 26);
+                    }
+                }
+                setTimeout(step, 1000);
+            })(searchInputs[i]);
+        }
+
+        /* 5. Detailed & Continuously Moving Sparkline Graphs on KPI & Metric Tiles */
+        var svgNS = 'http://www.w3.org/2000/svg';
+        var sparkInstances = [];
+        var sparkSvgs = document.querySelectorAll('.exec-sparkline-svg');
+
+        for (var k = 0; k < sparkSvgs.length; k++) {
+            (function (svg, index) {
+                if (svg.dataset.boundLiveSpark) { return; }
+                svg.dataset.boundLiveSpark = 'true';
+
+                /* Wrap SVG in a detailed telemetry box with LIVE readout */
+                var parent = svg.parentNode;
+                if (parent && !parent.classList.contains('exec-sparkline-wrap')) {
+                    var wrap = document.createElement('div');
+                    wrap.className = 'exec-sparkline-wrap';
+                    parent.insertBefore(wrap, svg);
+                    wrap.appendChild(svg);
+
+                    var meta = document.createElement('div');
+                    meta.className = 'spark-telemetry-meta';
+                    var labels = ['PEAK +14%', 'AVG 98.4%', 'RATIO 1.2x', 'MARGIN +', 'VELOCITY', 'TURNOVER', 'THRESHOLD'];
+                    meta.innerHTML = '<span class="spark-live-badge">LIVE</span><span>' + labels[index % labels.length] + '</span>';
+                    wrap.appendChild(meta);
+                }
+
+                var strokePath = svg.querySelector('path[stroke]');
+                if (!strokePath) { return; }
+                var fillPath = svg.querySelector('path[fill]:not([stroke])');
+                var strokeColor = strokePath.getAttribute('stroke') || '#2563eb';
+                var dAttr = strokePath.getAttribute('d') || '';
+
+                /* Parse coordinate pairs from d="M2 28 L18 24 ..." */
+                var regex = /[ML]\s*([0-9.]+)\s+([0-9.]+)/gi;
+                var match, basePts = [];
+                while ((match = regex.exec(dAttr)) !== null) {
+                    basePts.push({ x: parseFloat(match[1]), y: parseFloat(match[2]) });
+                }
+                if (basePts.length < 3) { return; }
+
+                /* Ensure area gradient exists if SVG didn't have a fill path */
+                if (!fillPath) {
+                    var gradId = 'autoSparkGrad_' + index;
+                    var defs = svg.querySelector('defs');
+                    if (!defs) {
+                        defs = document.createElementNS(svgNS, 'defs');
+                        svg.insertBefore(defs, svg.firstChild);
+                    }
+                    var lg = document.createElementNS(svgNS, 'linearGradient');
+                    lg.setAttribute('id', gradId);
+                    lg.setAttribute('x1', '0'); lg.setAttribute('y1', '0');
+                    lg.setAttribute('x2', '0'); lg.setAttribute('y2', '1');
+                    var st1 = document.createElementNS(svgNS, 'stop');
+                    st1.setAttribute('offset', '0%');
+                    st1.setAttribute('stop-color', strokeColor);
+                    st1.setAttribute('stop-opacity', '0.28');
+                    var st2 = document.createElementNS(svgNS, 'stop');
+                    st2.setAttribute('offset', '100%');
+                    st2.setAttribute('stop-color', strokeColor);
+                    st2.setAttribute('stop-opacity', '0.0');
+                    lg.appendChild(st1);
+                    lg.appendChild(st2);
+                    defs.appendChild(lg);
+
+                    fillPath = document.createElementNS(svgNS, 'path');
+                    fillPath.setAttribute('fill', 'url(#' + gradId + ')');
+                    svg.insertBefore(fillPath, strokePath);
+                }
+
+                /* Add detailed background reference grid lines inside SVG */
+                var gridGroup = document.createElementNS(svgNS, 'g');
+                gridGroup.setAttribute('stroke', 'rgba(148, 163, 184, 0.25)');
+                gridGroup.setAttribute('stroke-width', '0.6');
+                gridGroup.setAttribute('stroke-dasharray', '2,2');
+                [10, 20, 30].forEach(function (gy) {
+                    var gl = document.createElementNS(svgNS, 'line');
+                    gl.setAttribute('x1', '2'); gl.setAttribute('y1', String(gy));
+                    gl.setAttribute('x2', '94'); gl.setAttribute('y2', String(gy));
+                    gridGroup.appendChild(gl);
+                });
+                svg.insertBefore(gridGroup, fillPath);
+
+                /* Add vertical scanning telemetry line */
+                var scanLine = document.createElementNS(svgNS, 'line');
+                scanLine.setAttribute('y1', '3');
+                scanLine.setAttribute('y2', '34');
+                scanLine.setAttribute('stroke', strokeColor);
+                scanLine.setAttribute('stroke-width', '1');
+                scanLine.setAttribute('stroke-dasharray', '2,2');
+                scanLine.setAttribute('opacity', '0.55');
+                svg.appendChild(scanLine);
+
+                /* Add intermediate vertex dots */
+                var nodeDots = [];
+                for (var p = 0; p < basePts.length; p++) {
+                    var c = document.createElementNS(svgNS, 'circle');
+                    c.setAttribute('r', p === basePts.length - 1 ? '3.2' : '1.7');
+                    c.setAttribute('fill', p === basePts.length - 1 ? strokeColor : '#ffffff');
+                    c.setAttribute('stroke', strokeColor);
+                    c.setAttribute('stroke-width', '1.4');
+                    svg.appendChild(c);
+                    nodeDots.push(c);
+                }
+
+                /* Add glowing pulsing halo on the terminal live node */
+                var liveRing = document.createElementNS(svgNS, 'circle');
+                liveRing.setAttribute('r', '4');
+                liveRing.setAttribute('fill', 'none');
+                liveRing.setAttribute('stroke', strokeColor);
+                liveRing.setAttribute('stroke-width', '1.5');
+                liveRing.setAttribute('class', 'spark-live-ring');
+                svg.appendChild(liveRing);
+
+                /* Add traveling comet dot that glides along the curve */
+                var traveler = document.createElementNS(svgNS, 'circle');
+                traveler.setAttribute('r', '2.5');
+                traveler.setAttribute('fill', strokeColor);
+                svg.appendChild(traveler);
+
+                sparkInstances.push({
+                    basePts: basePts,
+                    strokePath: strokePath,
+                    fillPath: fillPath,
+                    nodeDots: nodeDots,
+                    liveRing: liveRing,
+                    scanLine: scanLine,
+                    traveler: traveler,
+                    phaseOffset: index * 1.15
+                });
+            })(sparkSvgs[k], k);
+        }
+
+        /* Smooth requestAnimationFrame loop for live sparkline wave & scan movement */
+        if (sparkInstances.length > 0) {
+            var startTime = performance.now();
+            function tickSparklines(now) {
+                var elapsed = (now - startTime) * 0.001;
+                for (var sIdx = 0; sIdx < sparkInstances.length; sIdx++) {
+                    var inst = sparkInstances[sIdx];
+                    var pts = inst.basePts;
+                    var curPts = [];
+                    var dStroke = '';
+
+                    for (var i = 0; i < pts.length; i++) {
+                        var wave = Math.sin(elapsed * 2.4 + inst.phaseOffset + i * 0.85) * 2.1
+                                 + Math.cos(elapsed * 1.3 + i * 1.2) * 0.9;
+                        var ny = Math.max(4, Math.min(32, pts[i].y + wave));
+                        var nx = pts[i].x;
+                        curPts.push({ x: nx, y: ny });
+                        dStroke += (i === 0 ? 'M' : ' L') + nx.toFixed(1) + ' ' + ny.toFixed(1);
+                        inst.nodeDots[i].setAttribute('cx', nx.toFixed(1));
+                        inst.nodeDots[i].setAttribute('cy', ny.toFixed(1));
+                    }
+
+                    var lastPt = curPts[curPts.length - 1];
+                    var firstPt = curPts[0];
+                    inst.liveRing.setAttribute('cx', lastPt.x.toFixed(1));
+                    inst.liveRing.setAttribute('cy', lastPt.y.toFixed(1));
+
+                    inst.strokePath.setAttribute('d', dStroke);
+                    inst.strokePath.style.strokeDasharray = 'none';
+                    inst.strokePath.style.strokeDashoffset = '0';
+
+                    if (inst.fillPath) {
+                        var dFill = dStroke + ' L' + lastPt.x.toFixed(1) + ' 34 L' + firstPt.x.toFixed(1) + ' 34 Z';
+                        inst.fillPath.setAttribute('d', dFill);
+                    }
+
+                    /* Traveling telemetry pulse along the segments */
+                    var cycle = ((elapsed * 0.45 + inst.phaseOffset * 0.2) % 1);
+                    var totalSegs = curPts.length - 1;
+                    var exactIdx = cycle * totalSegs;
+                    var segIdx = Math.min(totalSegs - 1, Math.floor(exactIdx));
+                    var frac = exactIdx - segIdx;
+                    var tx = curPts[segIdx].x + (curPts[segIdx + 1].x - curPts[segIdx].x) * frac;
+                    var ty = curPts[segIdx].y + (curPts[segIdx + 1].y - curPts[segIdx].y) * frac;
+
+                    inst.scanLine.setAttribute('x1', tx.toFixed(1));
+                    inst.scanLine.setAttribute('x2', tx.toFixed(1));
+                    inst.traveler.setAttribute('cx', tx.toFixed(1));
+                    inst.traveler.setAttribute('cy', ty.toFixed(1));
+                }
+                requestAnimationFrame(tickSparklines);
+            }
+            requestAnimationFrame(tickSparklines);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initInventraRichEffects);
+    } else {
+        initInventraRichEffects();
+    }
+})();
+</script>
+</th:block>
 </body>
 </html>

@@ -37,6 +37,34 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
     List<Sale> findAllByOrderByCreatedAtDesc();
 
     /**
+     * Fetch all sales with line items and product details ordered by saleDate DESC, createdAt DESC.
+     */
+    @Query("SELECT DISTINCT s FROM Sale s " +
+           "LEFT JOIN FETCH s.items i " +
+           "LEFT JOIN FETCH i.product " +
+           "ORDER BY s.saleDate DESC, s.createdAt DESC, s.id DESC")
+    List<Sale> findAllWithDetails();
+
+    /**
+     * Fetch sales within a specific date range with line items and product details.
+     */
+    @Query("SELECT DISTINCT s FROM Sale s " +
+           "LEFT JOIN FETCH s.items i " +
+           "LEFT JOIN FETCH i.product " +
+           "WHERE s.saleDate BETWEEN :start AND :end " +
+           "ORDER BY s.saleDate DESC, s.createdAt DESC, s.id DESC")
+    List<Sale> findBySaleDateBetweenWithDetails(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    /**
+     * Fetch a single sale by ID with line items and product details.
+     */
+    @Query("SELECT DISTINCT s FROM Sale s " +
+           "LEFT JOIN FETCH s.items i " +
+           "LEFT JOIN FETCH i.product " +
+           "WHERE s.id = :id")
+    Optional<Sale> findByIdWithDetails(@Param("id") Long id);
+
+    /**
      * Find sales within a specific date range.
      *
      * @param start the start date (inclusive)

@@ -32,27 +32,41 @@ public class PurchaseService {
     private final SupplierRepository supplierRepository;
     private final ProductRepository productRepository;
     private final InventoryService inventoryService;
+    private final ActivityLogService activityLogService;
 
     public PurchaseService(PurchaseRepository purchaseRepository,
                            SupplierRepository supplierRepository,
                            ProductRepository productRepository,
-                           InventoryService inventoryService) {
+                           InventoryService inventoryService,
+                           ActivityLogService activityLogService) {
         this.purchaseRepository = purchaseRepository;
         this.supplierRepository = supplierRepository;
         this.productRepository = productRepository;
         this.inventoryService = inventoryService;
+        this.activityLogService = activityLogService;
     }
 
+    @Transactional(readOnly = true)
     public List<Purchase> getAllPurchases() {
-        return purchaseRepository.findAllByOrderByCreatedAtDesc();
+        return purchaseRepository.findAllWithDetails();
     }
 
+    @Transactional(readOnly = true)
+    public List<Purchase> getPurchasesBySupplier(Long supplierId) {
+        if (supplierId == null) {
+            return purchaseRepository.findAllWithDetails();
+        }
+        return purchaseRepository.findBySupplierIdWithDetails(supplierId);
+    }
+
+    @Transactional(readOnly = true)
     public List<Purchase> getRecentPurchases(int limit) {
         return purchaseRepository.findRecentPurchases(PageRequest.of(0, limit));
     }
 
+    @Transactional(readOnly = true)
     public Purchase getPurchaseById(Long id) {
-        return purchaseRepository.findById(id)
+        return purchaseRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Purchase", "id", id));
     }
 
@@ -71,7 +85,7 @@ public class PurchaseService {
         Purchase purchase = new Purchase();
         purchase.setPurchaseNumber(purchaseNumber);
         purchase.setSupplier(supplier);
-        purchase.setPurchaseDate(dto.getPurchaseDate() != null ? dto.getPurchaseDate() : LocalDate.now());
+        purchase.setPurchaseDate(dto.getPurchaseDate() != null ? dto.getPurchaseDate() : LocalDate.now(SaleService.IST_ZONE));
         purchase.setNotes(dto.getNotes());
 
         BigDecimal totalAmount = BigDecimal.ZERO;
@@ -102,11 +116,24 @@ public class PurchaseService {
         }
 
         purchase.setTotalAmount(totalAmount);
-        return purchaseRepository.save(purchase);
+        com.showroom.inventory.entity.User currentUser = activityLogService.getCurrentAuthenticatedUser();
+        if (currentUser != null) {
+            purchase.setCreatedBy(currentUser.getUsername());
+            purchase.setCreatedByName(currentUser.getFullName());
+        }
+        Purchase saved = purchaseRepository.save(purchase);
+        activityLogService.logCurrentUserAction(
+                "CREATE_PURCHASE",
+                "PURCHASES",
+                "Recorded purchase order " + saved.getPurchaseNumber() + " from supplier '" + supplier.getName() + "'",
+                "None",
+                "PO: " + saved.getPurchaseNumber() + ", Total Amount: ₹" + saved.getTotalAmount() + ", Units: " + saved.getTotalQuantity()
+        );
+        return saved;
     }
 
     private String generateUniquePurchaseNumber() {
-        String dateStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String dateStr = LocalDate.now(SaleService.IST_ZONE).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String poNumber;
         do {
             int randomSuffix = ThreadLocalRandom.current().nextInt(1000, 9999);

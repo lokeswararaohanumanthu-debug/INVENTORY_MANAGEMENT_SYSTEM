@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Low Stock Alerts - MobileZone Pro</title>
+    <title>Low Stock Alerts - INVENTRA</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/style.css}">
@@ -21,7 +21,7 @@
                 <h5 class="fw-bold mb-1 text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Action Required: Critical Stock Depletion</h5>
                 <p class="text-muted small mb-0">Products listed here require immediate purchase reorders to prevent stockout at checkout.</p>
             </div>
-            <a th:href="@{/purchases/new}" class="btn btn-warning shadow-sm fw-semibold">
+            <a th:if="${@rbac.has('PURCHASE_CREATE')}" th:href="@{/purchases/new}" class="btn btn-warning shadow-sm fw-semibold">
                 <i class="bi bi-cart-plus me-1"></i> Place Purchase Order
             </a>
         </div>
@@ -39,7 +39,7 @@
                         <th class="text-center">Current Qty</th>
                         <th class="text-center">Min Threshold</th>
                         <th class="text-center">Status</th>
-                        <th class="text-end">Action</th>
+                        <th class="text-end" th:if="${@rbac.has('PURCHASE_CREATE')}">Action</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -58,7 +58,7 @@
                                 Low Stock
                             </span>
                         </td>
-                        <td class="text-end">
+                        <td class="text-end" th:if="${@rbac.has('PURCHASE_CREATE')}">
                             <a th:href="@{/purchases/new}" class="btn btn-sm btn-primary">
                                 <i class="bi bi-plus"></i> Reorder
                             </a>

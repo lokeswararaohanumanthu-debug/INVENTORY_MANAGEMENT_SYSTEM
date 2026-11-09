@@ -3,10 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial Reports & Business Intelligence - MobileZone Pro</title>
+    <title>Financial Reports &amp; Business Intelligence - INVENTRA</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .report-filter-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 1.35rem 1.5rem;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+        }
+        .report-date-input {
+            height: 44px;
+            font-weight: 500;
+            color: #0f172a;
+            border-color: #cbd5e1;
+            border-radius: 10px;
+        }
+        .report-date-input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+        .btn-generate-report {
+            min-height: 44px;
+            padding: 0.55rem 1.25rem;
+            font-weight: 600;
+            font-size: 0.92rem;
+            letter-spacing: 0.01em;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+            border: 1px solid #1d4ed8;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22);
+            transition: all 0.18s ease;
+        }
+        .btn-generate-report:hover, .btn-generate-report:focus {
+            background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
+            color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(30, 64, 175, 0.28);
+        }
+        .btn-print-report {
+            height: 44px;
+            width: 44px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            background: #ffffff;
+            transition: all 0.15s ease;
+        }
+        .btn-print-report:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+            color: #0f172a;
+        }
+        .period-preset-btn {
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 0.28rem 0.7rem;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: #475569;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            cursor: pointer;
+        }
+        .period-preset-btn:hover {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            color: #1d4ed8;
+        }
+        .pnl-metric-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.15rem 1.25rem;
+            background: #ffffff;
+            height: 100%;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .pnl-metric-card:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+        }
+        .pnl-icon-box {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .section-icon-box {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        .insight-icon-box {
+            width: 38px;
+            height: 38px;
+            border-radius: 9px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+            flex-shrink: 0;
+        }
+    </style>
 </head>
 <body>
 
@@ -16,22 +131,69 @@
     <div th:replace="~{fragments/header :: header('Financial Reports & Business Intelligence')}"></div>
 
     <div class="page-container">
+        <!-- Date Validation Alert -->
+        <div th:if="${dateWarning}" class="alert alert-warning d-flex align-items-center gap-2 mb-3 py-2 small">
+            <i class="bi bi-exclamation-circle fs-6"></i>
+            <span th:text="${dateWarning}">Date warning</span>
+        </div>
+        <div id="clientDateError" class="alert alert-danger d-none align-items-center gap-2 mb-3 py-2 small">
+            <i class="bi bi-exclamation-octagon fs-6"></i>
+            <span>Invalid date range: <strong>Report Period From</strong> cannot be later than <strong>Period To</strong>. Please select a valid date range.</span>
+        </div>
+
         <!-- Date Filter Toolbar -->
-        <div class="content-card mb-4 no-print">
-            <form th:action="@{/reports}" method="get" class="row g-3 align-items-center">
-                <div class="col-md-4">
-                    <label class="form-label small fw-semibold">Report Period From</label>
-                    <input type="date" name="startDate" class="form-control" th:value="${startDate}" required>
+        <div class="report-filter-card mb-4 no-print">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-2 border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="section-icon-box bg-primary bg-opacity-10 text-primary">
+                        <i class="bi bi-calendar-range"></i>
+                    </span>
+                    <div>
+                        <h6 class="fw-bold mb-0 text-dark">Reporting Period Configuration</h6>
+                        <small class="text-muted">Filter revenue, COGS, expenses, purchases, and profit/loss by exact date range</small>
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label small fw-semibold">Period To</label>
-                    <input type="date" name="endDate" class="form-control" th:value="${endDate}" required>
+                <div class="d-flex flex-wrap align-items-center gap-1">
+                    <span class="text-muted small me-1 fw-medium">Quick Ranges:</span>
+                    <button type="button" class="period-preset-btn" onclick="applyPresetRange('2026-11-06', '2026-11-06')">Today</button>
+                    <button type="button" class="period-preset-btn" onclick="applyPresetRange('2026-11-05', '2026-11-05')">Yesterday</button>
+                    <button type="button" class="period-preset-btn" onclick="applyPresetRange('2026-10-31', '2026-11-06')">Last 7 Days</button>
+                    <button type="button" class="period-preset-btn" onclick="applyPresetRange('2026-11-02', '2026-11-06')">This Week</button>
+                    <button type="button" class="period-preset-btn" onclick="applyPresetRange('2026-11-01', '2026-11-06')">This Month</button>
+                    <button type="button" class="period-preset-btn" onclick="applyPresetRange('2026-11-01', '2026-11-10')">01 Nov – 10 Nov</button>
+                    <button type="button" class="period-preset-btn" onclick="applyPresetRange('2026-11-01', '2026-11-15')">01 Nov – 15 Nov</button>
+                    <button type="button" class="period-preset-btn" onclick="applyPresetRange('2026-11-01', '2026-11-30')">Full Nov (1–30)</button>
+                    <button type="button" class="period-preset-btn" onclick="applyPresetRange('2026-10-01', '2026-10-31')">October 2026</button>
                 </div>
-                <div class="col-md-4 pt-4 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary flex-grow-1">
-                        <i class="bi bi-filter me-1"></i> Generate Report
+            </div>
+
+            <form th:action="@{/reports}" method="get" id="reportFilterForm" class="row g-3 align-items-end">
+                <div class="col-md-3 col-sm-6">
+                    <label for="startDateInput" class="form-label small fw-semibold text-secondary mb-1">
+                        <i class="bi bi-calendar-event me-1 text-primary"></i>Report Period From
+                    </label>
+                    <input type="date" id="startDateInput" name="startDate" class="form-control report-date-input"
+                           th:value="${startDate}" required>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <label for="endDateInput" class="form-label small fw-semibold text-secondary mb-1">
+                        <i class="bi bi-calendar-check me-1 text-primary"></i>Period To
+                    </label>
+                    <input type="date" id="endDateInput" name="endDate" class="form-control report-date-input"
+                           th:value="${endDate}" required>
+                </div>
+                <div class="col-md-6 d-flex align-items-center gap-2">
+                    <button type="submit" id="generateReportBtn" class="btn btn-generate-report flex-grow-1 d-inline-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-file-earmark-bar-graph fs-6"></i>
+                        <span>Generate Report &ndash; <span id="dynamicPeriodText" th:text="${report.periodLabel}">November 2026</span></span>
                     </button>
-                    <button type="button" onclick="window.print()" class="btn btn-outline-dark">
+                    <a th:if="${@rbac.has('REPORT_EXPORT')}"
+                       th:href="@{/reports/export(startDate=${startDate}, endDate=${endDate})}"
+                       class="btn-print-report"
+                       title="Export Financial Report CSV">
+                        <i class="bi bi-file-earmark-spreadsheet text-success"></i>
+                    </a>
+                    <button type="button" onclick="window.print()" class="btn-print-report" title="Print Financial Statement">
                         <i class="bi bi-printer"></i>
                     </button>
                 </div>
@@ -39,106 +201,270 @@
         </div>
 
         <!-- Profit & Loss Statement Card -->
-        <div class="content-card mb-4">
-            <div class="content-card-header">
-                <div>
-                    <h5 class="content-card-title text-primary"><i class="bi bi-calculator me-2"></i>Profit & Loss Summary (P&L)</h5>
-                    <small class="text-muted">Period: <span th:text="${startDate}"></span> to <span th:text="${endDate}"></span></small>
-                </div>
-                <span class="badge bg-primary-subtle text-primary border">Accrual Accounting</span>
-            </div>
-
-            <!-- Financial Waterfall Cards -->
-            <div class="row g-3 mb-4">
-                <div class="col-md-3">
-                    <div class="border rounded-3 p-3 bg-light">
-                        <span class="text-muted small text-uppercase fw-semibold d-block">1. Total Revenue</span>
-                        <div class="fs-4 fw-bold text-dark mt-1" th:text="'₹' + ${#numbers.formatDecimal(report.revenue, 1, 'COMMA', 2, 'POINT')}">₹0.00</div>
-                        <small class="text-muted" th:text="${report.salesCount} + ' Sales Invoices'">0 Invoices</small>
+        <div class="content-card mb-4" id="pnl-summary">
+            <div class="content-card-header flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="section-icon-box bg-primary bg-opacity-10 text-primary">
+                        <i class="bi bi-bar-chart-steps"></i>
+                    </span>
+                    <div>
+                        <h5 class="content-card-title text-dark mb-0">Profit &amp; Loss Summary (P&amp;L)</h5>
+                        <small class="text-muted">
+                            Reporting Period:
+                            <strong class="text-dark" th:text="${report.periodLabel}">November 2026</strong>
+                            (<span th:text="${startDate}">2026-11-01</span> to <span th:text="${endDate}">2026-11-30</span>)
+                        </small>
                     </div>
                 </div>
-
-                <div class="col-md-3">
-                    <div class="border rounded-3 p-3 bg-light">
-                        <span class="text-muted small text-uppercase fw-semibold d-block">2. Cost of Goods Sold (COGS)</span>
-                        <div class="fs-4 fw-bold text-secondary mt-1" th:text="'₹' + ${#numbers.formatDecimal(report.costOfGoodsSold, 1, 'COMMA', 2, 'POINT')}">₹0.00</div>
-                        <small class="text-muted">Cost of items actually sold</small>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="border rounded-3 p-3 bg-light">
-                        <span class="text-muted small text-uppercase fw-semibold d-block">3. Gross Profit (1 - 2)</span>
-                        <div class="fs-4 fw-bold text-primary mt-1" th:text="'₹' + ${#numbers.formatDecimal(report.grossProfit, 1, 'COMMA', 2, 'POINT')}">₹0.00</div>
-                        <small class="text-muted">Trading profit before overhead</small>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="border rounded-3 p-3" th:classappend="${report.netProfit >= 0} ? 'bg-success bg-opacity-10 border-success' : 'bg-danger bg-opacity-10 border-danger'">
-                        <span class="text-uppercase fw-bold small d-block" th:classappend="${report.netProfit >= 0} ? 'text-success' : 'text-danger'">4. Net Profit (Gross - Expenses)</span>
-                        <div class="fs-4 fw-bold mt-1" th:classappend="${report.netProfit >= 0} ? 'text-success' : 'text-danger'"
-                             th:text="'₹' + ${#numbers.formatDecimal(report.netProfit, 1, 'COMMA', 2, 'POINT')}">₹0.00</div>
-                        <small class="text-muted" th:text="'After ₹' + ${#numbers.formatDecimal(report.totalExpenses, 1, 'COMMA', 2, 'POINT')} + ' expenses'">Expenses</small>
-                    </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-light text-secondary border fw-semibold">
+                        <i class="bi bi-calendar3 me-1"></i><span th:text="${report.salesCount} + ' Sales'">0 Sales</span> &bull; <span th:text="${report.totalUnitsSold} + ' Units Sold'">0 Units</span>
+                    </span>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-semibold">
+                        <i class="bi bi-shield-check me-1"></i>Accrual Accounting (INR)
+                    </span>
                 </div>
             </div>
 
-            <!-- Formula explanation note (Ideal for Viva!) -->
-            <div class="alert alert-info py-2 small d-flex align-items-center gap-2 mb-0">
-                <i class="bi bi-mortarboard-fill fs-5"></i>
+            <!-- Primary P&L Financial Cards (4 Core P&L Columns) -->
+            <div class="row g-3 mb-3">
+                <!-- 1. Total Revenue -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="pnl-metric-card">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-muted small text-uppercase fw-bold">1. Total Revenue</span>
+                            <span class="pnl-icon-box bg-primary bg-opacity-10 text-primary">
+                                <i class="bi bi-graph-up-arrow"></i>
+                            </span>
+                        </div>
+                        <div class="fs-4 fw-bold text-dark" th:text="${@currencyUtil.formatInr(report.revenue)}">₹0</div>
+                        <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top small text-muted">
+                            <span><i class="bi bi-receipt me-1"></i><span th:text="${report.salesCount} + ' Sales Invoices'">0 Invoices</span></span>
+                            <span class="fw-semibold text-primary" th:text="${report.totalUnitsSold} + ' Units'">0 Units</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Cost of Goods Sold (COGS) -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="pnl-metric-card">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-muted small text-uppercase fw-bold">2. Cost of Goods Sold</span>
+                            <span class="pnl-icon-box bg-secondary bg-opacity-10 text-secondary">
+                                <i class="bi bi-box-seam"></i>
+                            </span>
+                        </div>
+                        <div class="fs-4 fw-bold text-secondary" th:text="${@currencyUtil.formatInr(report.costOfGoodsSold)}">₹0</div>
+                        <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top small text-muted">
+                            <span>Direct cost of sold units</span>
+                            <span class="badge bg-light text-secondary border">COGS</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Gross Profit -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="pnl-metric-card">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-muted small text-uppercase fw-bold">3. Gross Profit (1 &minus; 2)</span>
+                            <span class="pnl-icon-box bg-info bg-opacity-10 text-info-emphasis">
+                                <i class="bi bi-bar-chart-line"></i>
+                            </span>
+                        </div>
+                        <div class="fs-4 fw-bold text-primary" th:text="${@currencyUtil.formatInr(report.grossProfit)}">₹0</div>
+                        <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top small text-muted">
+                            <span>Gross Trading Margin</span>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle"
+                                  th:text="${report.grossMargin} + '%'">0.00%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Net Profit / Loss -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="pnl-metric-card"
+                         th:classappend="${report.netProfit >= 0} ? 'border-success bg-success bg-opacity-10' : 'border-danger bg-danger bg-opacity-10'">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="small text-uppercase fw-bold"
+                                  th:classappend="${report.netProfit >= 0} ? 'text-success' : 'text-danger'"
+                                  th:text="${report.netProfit >= 0} ? '4. Net Profit (Gross - Exp)' : '4. Net Loss (Gross - Exp)'">4. Net Profit</span>
+                            <span class="pnl-icon-box"
+                                  th:classappend="${report.netProfit >= 0} ? 'bg-success text-white' : 'bg-danger text-white'">
+                                <i class="bi" th:classappend="${report.netProfit >= 0} ? 'bi-pie-chart-fill' : 'bi-arrow-down-right-circle-fill'"></i>
+                            </span>
+                        </div>
+                        <div class="fs-4 fw-bold"
+                             th:classappend="${report.netProfit >= 0} ? 'text-success' : 'text-danger'"
+                             th:text="${@currencyUtil.formatInr(report.netProfit)}">₹0</div>
+                        <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top small"
+                             th:classappend="${report.netProfit >= 0} ? 'border-success-subtle text-success-emphasis' : 'border-danger-subtle text-danger-emphasis'">
+                            <span th:text="'After ' + ${@currencyUtil.formatInr(report.totalExpenses)} + ' expenses'">After ₹0 expenses</span>
+                            <span class="badge"
+                                  th:classappend="${report.netProfit >= 0} ? 'bg-success text-white' : 'bg-danger text-white'"
+                                  th:text="'Margin: ' + ${report.profitMargin} + '%'">0.00%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secondary Financial Strip: Operating Expenses, Inventory Purchases, and Profit Margin Summary -->
+            <div class="row g-3 mb-3">
+                <!-- Operating Expenses Card -->
+                <div class="col-md-4">
+                    <div class="pnl-metric-card bg-light">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="pnl-icon-box bg-danger bg-opacity-10 text-danger">
+                                <i class="bi bi-receipt-cutoff"></i>
+                            </span>
+                            <div class="flex-grow-1">
+                                <div class="text-muted small text-uppercase fw-bold">Total Operating Expenses</div>
+                                <div class="fs-5 fw-bold text-dark" th:text="${@currencyUtil.formatInr(report.totalExpenses)}">₹0</div>
+                                <small class="text-muted">Rent, salary, utilities &amp; marketing in period</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Purchases (Stock In) Card -->
+                <div class="col-md-4">
+                    <div class="pnl-metric-card bg-light">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="pnl-icon-box bg-warning bg-opacity-10 text-dark">
+                                <i class="bi bi-truck"></i>
+                            </span>
+                            <div class="flex-grow-1">
+                                <div class="text-muted small text-uppercase fw-bold">Total Inventory Purchases</div>
+                                <div class="fs-5 fw-bold text-dark" th:text="${@currencyUtil.formatInr(report.totalPurchases)}">₹0</div>
+                                <small class="text-muted" th:text="${report.purchasesCount} + ' Vendor Purchase Orders (Stock In)'">0 Purchase Orders</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Net Profit Margin Card -->
+                <div class="col-md-4">
+                    <div class="pnl-metric-card bg-light">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="pnl-icon-box bg-primary bg-opacity-10 text-primary">
+                                <i class="bi bi-percent"></i>
+                            </span>
+                            <div class="flex-grow-1">
+                                <div class="text-muted small text-uppercase fw-bold">Net Profit Margin</div>
+                                <div class="fs-5 fw-bold"
+                                     th:classappend="${report.profitMargin >= 0} ? 'text-primary' : 'text-danger'"
+                                     th:text="${report.profitMargin} + '%'">0.00%</div>
+                                <small class="text-muted">Formula: (Net Profit &divide; Total Revenue) &times; 100</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expense Category Breakdown (when expenses exist in period) -->
+            <div th:if="${!#lists.isEmpty(report.expenseBreakdown)}" class="border rounded-3 p-3 mb-3 bg-white">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="small fw-bold text-uppercase text-secondary">
+                        <i class="bi bi-layers me-1 text-primary"></i>Operating Expense Breakdown by Category
+                    </span>
+                    <span class="small fw-semibold text-dark" th:text="'Total: ' + ${@currencyUtil.formatInr(report.totalExpenses)}">Total: ₹0</span>
+                </div>
+                <div class="row g-2">
+                    <div class="col-md-3 col-sm-6" th:each="exp : ${report.expenseBreakdown}">
+                        <div class="border rounded-2 px-3 py-2 d-flex align-items-center justify-content-between bg-light">
+                            <span class="small fw-semibold text-secondary" th:text="${exp[0].displayName}">Category</span>
+                            <span class="small fw-bold text-dark" th:text="${@currencyUtil.formatInr(exp[1])}">₹0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accounting Standard Note -->
+            <div class="alert alert-light border py-2 px-3 small d-flex align-items-center gap-2 mb-0 text-secondary">
+                <i class="bi bi-journal-check text-primary fs-5"></i>
                 <div>
-                    <strong>Accounting Standard:</strong>
+                    <strong class="text-dark">Accounting Standard:</strong>
                     <code>Gross Profit = Total Revenue - Cost of Goods Sold (COGS)</code> &bull;
                     <code>Net Profit = Gross Profit - Operating Expenses</code>.
-                    <em>Unsold inventory purchases remain stored as showroom assets and are not deducted from current profit.</em>
+                    <span>Inventory purchases (<strong th:text="${@currencyUtil.formatInr(report.totalPurchases)}">₹0</strong>) are capitalized as showroom stock assets and expensed via COGS when sold.</span>
                 </div>
             </div>
         </div>
 
-        <!-- Business Recommendations Card (Module 6 Requirement) -->
-        <div class="content-card border-primary mb-4">
-            <div class="content-card-header bg-primary bg-opacity-10 rounded-top p-3 mb-3">
-                <h5 class="content-card-title text-primary mb-0">
-                    <i class="bi bi-lightbulb-fill text-warning me-2"></i>Automated Business Performance Insights
-                </h5>
+        <!-- Automated Business Performance Insights (Zero Emojis, Professional Icons Only) -->
+        <div class="content-card mb-4">
+            <div class="content-card-header border-bottom pb-3 mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="section-icon-box bg-primary bg-opacity-10 text-primary">
+                        <i class="bi bi-clipboard-data"></i>
+                    </span>
+                    <div>
+                        <h5 class="content-card-title text-dark mb-0">Automated Business Performance Insights</h5>
+                        <small class="text-muted">Rule-based financial and inventory diagnostics for <span th:text="${report.periodLabel}">period</span></small>
+                    </div>
+                </div>
+                <span class="badge bg-light text-secondary border">
+                    <i class="bi bi-cpu me-1"></i>Analytics Engine
+                </span>
             </div>
-            <div class="px-2">
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item d-flex align-items-start gap-3 py-3" th:each="suggestion : ${report.businessSuggestions}">
-                        <div class="text-dark fw-semibold" th:text="${suggestion}">Insight message</div>
-                    </li>
-                </ul>
+            <div class="list-group list-group-flush">
+                <div class="list-group-item px-1 py-3 d-flex align-items-start gap-3" th:each="insight : ${report.insights}">
+                    <span class="insight-icon-box border" th:classappend="${insight.badgeClass}">
+                        <i class="bi" th:classappend="${insight.icon}"></i>
+                    </span>
+                    <div>
+                        <div class="fw-bold text-dark mb-1" th:text="${insight.title}">Insight Title</div>
+                        <div class="text-secondary small" th:text="${insight.description}">Insight Description</div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Product Performance Grids -->
         <div class="row g-4">
-            <!-- Best Selling Products -->
+            <!-- Top 5 Best-Selling Products -->
             <div class="col-lg-6">
                 <div class="content-card h-100">
                     <div class="content-card-header">
-                        <h5 class="content-card-title"><i class="bi bi-star-fill text-warning me-2"></i>Top 5 Best-Selling Products</h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="section-icon-box bg-success bg-opacity-10 text-success">
+                                <i class="bi bi-award"></i>
+                            </span>
+                            <div>
+                                <h5 class="content-card-title mb-0">Top 5 Best-Selling Products</h5>
+                                <small class="text-muted">Highest unit velocity during <span th:text="${report.periodLabel}">selected period</span></small>
+                            </div>
+                        </div>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                            <i class="bi bi-graph-up-arrow me-1"></i>Top Performers
+                        </span>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
                             <thead class="table-light">
                             <tr>
-                                <th>#</th>
-                                <th>Product</th>
-                                <th>Brand</th>
-                                <th class="text-center">Units Sold</th>
+                                <th style="width: 10%;">#</th>
+                                <th style="width: 50%;">Product</th>
+                                <th style="width: 20%;">Brand</th>
+                                <th style="width: 20%;" class="text-center">Units Sold</th>
                             </tr>
                             </thead>
                             <tbody>
                             <tr th:each="item, stat : ${report.bestSellingProducts}">
-                                <td th:text="${stat.count}">1</td>
+                                <td class="text-muted fw-semibold" th:text="${stat.count}">1</td>
                                 <td class="fw-bold text-dark" th:text="${item[0]}">iPhone 15</td>
-                                <td th:text="${item[1]}">Apple</td>
-                                <td class="text-center fw-bold text-success fs-6" th:text="${item[2]}">24</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border" th:text="${item[1]}">Apple</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-2 py-1 fs-6 fw-bold"
+                                          th:text="${item[2]}">24</span>
+                                </td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(report.bestSellingProducts)}">
-                                <td colspan="4" class="text-center py-3 text-muted">No sales recorded in this period.</td>
+                                <td colspan="4" class="text-center py-4 text-muted">
+                                    <i class="bi bi-inbox d-block fs-4 mb-1"></i>
+                                    No product sales recorded in this reporting period.
+                                </td>
                             </tr>
                             </tbody>
                         </table>
@@ -146,31 +472,50 @@
                 </div>
             </div>
 
-            <!-- Slow Moving Products -->
+            <!-- Slow-Moving Products -->
             <div class="col-lg-6">
                 <div class="content-card h-100">
                     <div class="content-card-header">
-                        <h5 class="content-card-title"><i class="bi bi-hourglass-split text-danger me-2"></i>Slow-Moving Products</h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="section-icon-box bg-secondary bg-opacity-10 text-secondary">
+                                <i class="bi bi-arrow-down-right-square"></i>
+                            </span>
+                            <div>
+                                <h5 class="content-card-title mb-0">Slow-Moving Products</h5>
+                                <small class="text-muted">Lowest unit turnover during <span th:text="${report.periodLabel}">selected period</span></small>
+                            </div>
+                        </div>
+                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                            <i class="bi bi-clock-history me-1"></i>Low Velocity
+                        </span>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
                             <thead class="table-light">
                             <tr>
-                                <th>#</th>
-                                <th>Product</th>
-                                <th>Brand</th>
-                                <th class="text-center">Units Sold</th>
+                                <th style="width: 10%;">#</th>
+                                <th style="width: 50%;">Product</th>
+                                <th style="width: 20%;">Brand</th>
+                                <th style="width: 20%;" class="text-center">Units Sold</th>
                             </tr>
                             </thead>
                             <tbody>
                             <tr th:each="item, stat : ${report.slowMovingProducts}">
-                                <td th:text="${stat.count}">1</td>
+                                <td class="text-muted fw-semibold" th:text="${stat.count}">1</td>
                                 <td class="fw-semibold text-dark" th:text="${item[0]}">Phone Case</td>
-                                <td th:text="${item[1]}">Brand</td>
-                                <td class="text-center fw-semibold text-secondary" th:text="${item[2]}">1</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border" th:text="${item[1]}">Brand</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-light text-secondary border px-2 py-1 fw-bold"
+                                          th:text="${item[2]}">1</span>
+                                </td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(report.slowMovingProducts)}">
-                                <td colspan="4" class="text-center py-3 text-muted">No sales recorded in this period.</td>
+                                <td colspan="4" class="text-center py-4 text-muted">
+                                    <i class="bi bi-inbox d-block fs-4 mb-1"></i>
+                                    No product sales recorded in this reporting period.
+                                </td>
                             </tr>
                             </tbody>
                         </table>
@@ -183,5 +528,94 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    (function () {
+        const startInput = document.getElementById('startDateInput');
+        const endInput = document.getElementById('endDateInput');
+        const periodText = document.getElementById('dynamicPeriodText');
+        const errorBox = document.getElementById('clientDateError');
+        const form = document.getElementById('reportFilterForm');
+
+        const monthNamesFull = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        const monthNamesShort = [
+            'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        ];
+
+        function parseLocalDate(str) {
+            if (!str) return null;
+            const parts = str.split('-');
+            if (parts.length !== 3) return null;
+            return {
+                year: parseInt(parts[0], 10),
+                month: parseInt(parts[1], 10),
+                day: parseInt(parts[2], 10)
+            };
+        }
+
+        function getDaysInMonth(year, month) {
+            return new Date(year, month, 0).getDate();
+        }
+
+        function pad2(n) {
+            return n < 10 ? '0' + n : '' + n;
+        }
+
+        function formatPeriodLabel(startVal, endVal) {
+            const s = parseLocalDate(startVal);
+            const e = parseLocalDate(endVal);
+            if (!s || !e) return 'Selected Period';
+
+            const lastDay = getDaysInMonth(s.year, s.month);
+            if (s.year === e.year && s.month === e.month && s.day === 1 && e.day === lastDay) {
+                return monthNamesFull[s.month - 1] + ' ' + s.year;
+            }
+            if (s.year === e.year && s.month === e.month && s.day === e.day) {
+                return pad2(s.day) + ' ' + monthNamesShort[s.month - 1] + ' ' + s.year;
+            }
+            if (s.year === e.year && s.month === e.month) {
+                return pad2(s.day) + ' ' + monthNamesShort[s.month - 1] + ' to ' + pad2(e.day) + ' ' + monthNamesShort[e.month - 1] + ' ' + e.year;
+            }
+            return pad2(s.day) + ' ' + monthNamesShort[s.month - 1] + ' ' + s.year + ' to ' + pad2(e.day) + ' ' + monthNamesShort[e.month - 1] + ' ' + e.year;
+        }
+
+        function validateAndUpdateLabel() {
+            const sVal = startInput.value;
+            const eVal = endInput.value;
+            if (sVal && eVal) {
+                if (sVal > eVal) {
+                    errorBox.classList.remove('d-none');
+                    errorBox.classList.add('d-flex');
+                    return false;
+                } else {
+                    errorBox.classList.add('d-none');
+                    errorBox.classList.remove('d-flex');
+                }
+                periodText.textContent = formatPeriodLabel(sVal, eVal);
+            }
+            return true;
+        }
+
+        startInput.addEventListener('change', validateAndUpdateLabel);
+        endInput.addEventListener('change', validateAndUpdateLabel);
+
+        form.addEventListener('submit', function (e) {
+            if (!validateAndUpdateLabel()) {
+                e.preventDefault();
+            }
+        });
+
+        window.applyPresetRange = function (startStr, endStr) {
+            startInput.value = startStr;
+            endInput.value = endStr;
+            if (validateAndUpdateLabel()) {
+                form.submit();
+            }
+        };
+    })();
+</script>
 </body>
 </html>

@@ -1,20 +1,23 @@
 package com.showroom.inventory.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.showroom.inventory.enums.Permission;
 import com.showroom.inventory.enums.UserRole;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
 
 /**
- * User Entity — Represents a system user (admin, manager, staff) who can
- * log in and perform operations in the inventory management system.
+ * User Entity — Represents an employee account in the Showroom RBAC system.
  *
  * Security notes:
  *   - The password field stores a BCrypt hash, NEVER the plaintext password.
- *   - BCrypt is a one-way hashing algorithm designed for passwords; it
- *     automatically includes a salt and is intentionally slow to resist
- *     brute-force attacks.
- *   - The role field determines what actions the user is authorized to perform.
+ *   - Role + optional custom permission overrides determine granular authorities.
+ *   - Super Admin accounts are protected from unauthorized modification or deletion.
  */
 @Entity
 @Table(name = "users")
@@ -24,75 +27,63 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * Login username — must be unique across the system.
-     * unique = true creates a UNIQUE index in the database,
-     * preventing duplicate usernames at the DB level.
-     */
     @Column(unique = true, nullable = false, length = 50)
     private String username;
 
-    /**
-     * BCrypt-hashed password.
-     * The @Column has no length limit specified because BCrypt hashes
-     * are typically 60 characters, and the default VARCHAR(255) is sufficient.
-     */
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 
-    /** User's full display name — e.g., "Lokesh Kumar". */
     @Column(nullable = false, length = 100)
     private String fullName;
 
-    /** User's email address — used for password resets and notifications. */
     @Column(length = 100)
     private String email;
 
-    /**
-     * User's role in the system.
-     * Stored as a String in the database (e.g., "ADMIN", "MANAGER", "STAFF").
-     */
+    @Column(length = 30)
+    private String phone;
+
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 40)
     private UserRole role;
 
-    /** Whether the user account is active. Inactive users cannot log in. */
     @Column
     private boolean active = true;
 
-    /** Timestamp when this user account was created. */
+    @Column
+    private Boolean protectedAccount = false;
+
+    @Column
+    private Boolean passwordChangeRequired = false;
+
+    @Column(length = 1500)
+    private String customGrantedPermissions;
+
+    @Column(length = 1500)
+    private String customRevokedPermissions;
+
+    @Column
+    private LocalDateTime lastLoginAt;
+
     @Column
     private LocalDateTime createdAt;
 
-    // ──────────────────────────────────────────────────────────────
-    //  Lifecycle Callbacks
-    // ──────────────────────────────────────────────────────────────
-
-    /**
-     * @PrePersist — Sets defaults before the first save:
-     *   - createdAt timestamp
-     *   - active defaults to true (user accounts are active on creation)
-     */
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        if (!this.active) {
-            this.active = true;
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now(ZoneId.of("Asia/Kolkata"));
+        }
+        if (this.protectedAccount == null) {
+            this.protectedAccount = (this.role == UserRole.SUPER_ADMIN);
+        }
+        if (this.passwordChangeRequired == null) {
+            this.passwordChangeRequired = false;
         }
     }
 
-    // ──────────────────────────────────────────────────────────────
-    //  Constructors
-    // ──────────────────────────────────────────────────────────────
-
-    /** Default no-arg constructor — Required by JPA. */
     public User() {
     }
 
-    /**
-     * Parameterized constructor.
-     * Excludes id (auto-generated) and createdAt (set by @PrePersist).
-     */
     public User(String username, String password, String fullName,
                 String email, UserRole role, boolean active) {
         this.username = username;
@@ -101,11 +92,67 @@ public class User {
         this.email = email;
         this.role = role;
         this.active = active;
+        this.protectedAccount = (role == UserRole.SUPER_ADMIN);
     }
 
-    // ──────────────────────────────────────────────────────────────
-    //  Getters and Setters
-    // ──────────────────────────────────────────────────────────────
+    /**
+     * Computes the effective set of granular permissions for this employee.
+     * Super Admin always retains all permissions and cannot be restricted.
+     */
+    public Set<Permission> getEffectivePermissions() {
+        if (this.role == null) {
+            return Collections.emptySet();
+        }
+        if (this.role == UserRole.SUPER_ADMIN) {
+            return EnumSet.allOf(Permission.class);
+        }
+        EnumSet<Permission> effective = EnumSet.copyOf(this.role.getDefaultPermissions());
+        if (this.customGrantedPermissions != null && !this.customGrantedPermissions.isBlank()) {
+            for (String token : this.customGrantedPermissions.split(",")) {
+                String trimmed = token.trim();
+                if (!trimmed.isEmpty()) {
+                    try {
+                        effective.add(Permission.valueOf(trimmed));
+                    } catch (IllegalArgumentException ignored) {
+                    }
+                }
+            }
+        }
+        if (this.customRevokedPermissions != null && !this.customRevokedPermissions.isBlank()) {
+            for (String token : this.customRevokedPermissions.split(",")) {
+                String trimmed = token.trim();
+                if (!trimmed.isEmpty()) {
+                    try {
+                        effective.remove(Permission.valueOf(trimmed));
+                    } catch (IllegalArgumentException ignored) {
+                    }
+                }
+            }
+        }
+        return Collections.unmodifiableSet(effective);
+    }
+
+    public boolean hasPermission(Permission permission) {
+        if (permission == null) {
+            return false;
+        }
+        return getEffectivePermissions().contains(permission);
+    }
+
+    public boolean hasPermission(String permissionName) {
+        if (permissionName == null || permissionName.isBlank()) {
+            return false;
+        }
+        try {
+            return hasPermission(Permission.valueOf(permissionName.trim().toUpperCase()));
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
+    }
+
+    public boolean isSuperAdmin() {
+        return this.role == UserRole.SUPER_ADMIN;
+    }
 
     public Long getId() {
         return id;
@@ -123,6 +170,7 @@ public class User {
         this.username = username;
     }
 
+    @JsonIgnore
     public String getPassword() {
         return password;
     }
@@ -147,6 +195,14 @@ public class User {
         this.email = email;
     }
 
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
     public UserRole getRole() {
         return role;
     }
@@ -163,6 +219,46 @@ public class User {
         this.active = active;
     }
 
+    public boolean isProtectedAccount() {
+        return Boolean.TRUE.equals(protectedAccount) || this.role == UserRole.SUPER_ADMIN;
+    }
+
+    public void setProtectedAccount(Boolean protectedAccount) {
+        this.protectedAccount = protectedAccount;
+    }
+
+    public boolean isPasswordChangeRequired() {
+        return Boolean.TRUE.equals(passwordChangeRequired);
+    }
+
+    public void setPasswordChangeRequired(Boolean passwordChangeRequired) {
+        this.passwordChangeRequired = passwordChangeRequired;
+    }
+
+    public String getCustomGrantedPermissions() {
+        return customGrantedPermissions;
+    }
+
+    public void setCustomGrantedPermissions(String customGrantedPermissions) {
+        this.customGrantedPermissions = customGrantedPermissions;
+    }
+
+    public String getCustomRevokedPermissions() {
+        return customRevokedPermissions;
+    }
+
+    public void setCustomRevokedPermissions(String customRevokedPermissions) {
+        this.customRevokedPermissions = customRevokedPermissions;
+    }
+
+    public LocalDateTime getLastLoginAt() {
+        return lastLoginAt;
+    }
+
+    public void setLastLoginAt(LocalDateTime lastLoginAt) {
+        this.lastLoginAt = lastLoginAt;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -171,11 +267,6 @@ public class User {
         this.createdAt = createdAt;
     }
 
-    // ──────────────────────────────────────────────────────────────
-    //  toString — NEVER include the password hash in toString()
-    //  to avoid accidentally logging sensitive information.
-    // ──────────────────────────────────────────────────────────────
-
     @Override
     public String toString() {
         return "User{" +
@@ -183,6 +274,7 @@ public class User {
                 ", username='" + username + '\'' +
                 ", fullName='" + fullName + '\'' +
                 ", email='" + email + '\'' +
+                ", phone='" + phone + '\'' +
                 ", role=" + role +
                 ", active=" + active +
                 '}';

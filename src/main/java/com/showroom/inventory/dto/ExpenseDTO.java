@@ -25,7 +25,7 @@ public class ExpenseDTO {
 
     @NotNull(message = "Expense date is required")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate expenseDate = LocalDate.now();
+    private LocalDate expenseDate = LocalDate.now(java.time.ZoneId.of("Asia/Kolkata"));
 
     @Size(max = 500, message = "Description cannot exceed 500 characters")
     private String description;

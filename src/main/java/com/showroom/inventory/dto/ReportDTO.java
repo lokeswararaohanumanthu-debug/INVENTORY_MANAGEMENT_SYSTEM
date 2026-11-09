@@ -18,20 +18,56 @@ public class ReportDTO {
     private LocalDate endDate;
     private int month;
     private int year;
+    private String periodLabel;
 
     private BigDecimal revenue = BigDecimal.ZERO;
     private BigDecimal costOfGoodsSold = BigDecimal.ZERO;
     private BigDecimal grossProfit = BigDecimal.ZERO;
     private BigDecimal totalExpenses = BigDecimal.ZERO;
     private BigDecimal netProfit = BigDecimal.ZERO;
+    private BigDecimal totalPurchases = BigDecimal.ZERO;
+    private BigDecimal grossMargin = BigDecimal.ZERO;
+    private BigDecimal profitMargin = BigDecimal.ZERO;
 
     private long salesCount;
     private long purchasesCount;
+    private long totalUnitsSold;
 
     private List<Object[]> expenseBreakdown = new ArrayList<>();
     private List<Object[]> bestSellingProducts = new ArrayList<>();
     private List<Object[]> slowMovingProducts = new ArrayList<>();
     private List<String> businessSuggestions = new ArrayList<>();
+    private List<InsightItem> insights = new ArrayList<>();
+
+    public static class InsightItem {
+        private final String icon;
+        private final String badgeClass;
+        private final String title;
+        private final String description;
+
+        public InsightItem(String icon, String badgeClass, String title, String description) {
+            this.icon = icon;
+            this.badgeClass = badgeClass;
+            this.title = title;
+            this.description = description;
+        }
+
+        public String getIcon() {
+            return icon;
+        }
+
+        public String getBadgeClass() {
+            return badgeClass;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+    }
 
     public ReportDTO() {
     }
@@ -154,5 +190,53 @@ public class ReportDTO {
 
     public void setBusinessSuggestions(List<String> businessSuggestions) {
         this.businessSuggestions = businessSuggestions;
+    }
+
+    public String getPeriodLabel() {
+        return periodLabel;
+    }
+
+    public void setPeriodLabel(String periodLabel) {
+        this.periodLabel = periodLabel;
+    }
+
+    public BigDecimal getTotalPurchases() {
+        return totalPurchases != null ? totalPurchases : BigDecimal.ZERO;
+    }
+
+    public void setTotalPurchases(BigDecimal totalPurchases) {
+        this.totalPurchases = totalPurchases;
+    }
+
+    public BigDecimal getGrossMargin() {
+        return grossMargin != null ? grossMargin : BigDecimal.ZERO;
+    }
+
+    public void setGrossMargin(BigDecimal grossMargin) {
+        this.grossMargin = grossMargin;
+    }
+
+    public BigDecimal getProfitMargin() {
+        return profitMargin != null ? profitMargin : BigDecimal.ZERO;
+    }
+
+    public void setProfitMargin(BigDecimal profitMargin) {
+        this.profitMargin = profitMargin;
+    }
+
+    public long getTotalUnitsSold() {
+        return totalUnitsSold;
+    }
+
+    public void setTotalUnitsSold(long totalUnitsSold) {
+        this.totalUnitsSold = totalUnitsSold;
+    }
+
+    public List<InsightItem> getInsights() {
+        return insights;
+    }
+
+    public void setInsights(List<InsightItem> insights) {
+        this.insights = insights;
     }
 }

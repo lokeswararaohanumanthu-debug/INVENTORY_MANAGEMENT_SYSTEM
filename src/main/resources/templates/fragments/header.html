@@ -2,20 +2,105 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head></head>
 <body>
-<header th:fragment="header(pageTitle)" class="app-header">
-    <div class="d-flex align-items-center gap-3">
-        <h4 class="mb-0 fw-bold text-dark" th:text="${pageTitle}">Page Title</h4>
-    </div>
+<header th:fragment="header(pageTitle)" class="app-header flex-wrap gap-2">
     <div class="d-flex align-items-center gap-2">
-        <a th:href="@{/sales/billing}" class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm">
+        <button type="button"
+                id="sidebarCollapseToggleBtn"
+                class="sidebar-toggle-btn me-1"
+                onclick="toggleMobileSidebar()"
+                title="Open / Close Navigation Sidebar"
+                aria-label="Open or Close Navigation Sidebar">
+            <i class="bi bi-layout-sidebar-inset"></i>
+        </button>
+        <div class="d-flex align-items-center gap-2">
+            <h4 class="mb-0 fw-bold text-dark header-page-title" th:text="${pageTitle}">Page Title</h4>
+            <span class="inventra-live-dot ms-1" title="INVENTRA Live Telemetry Active"></span>
+        </div>
+    </div>
+    <div class="d-flex align-items-center flex-wrap gap-2">
+        <!-- Global Open / Close Workspace Panels Toggle Button -->
+        <button type="button"
+                class="theme-toggle-btn"
+                onclick="toggleAllInventraPanels(this)"
+                title="Open or Close Dashboard &amp; Workspace Panels">
+            <i class="bi bi-arrows-angle-contract"></i>
+            <span class="master-toggle-label d-none d-sm-inline">Close All Panels</span>
+        </button>
+
+        <!-- Logged-In Employee & Role Indicator -->
+        <div th:if="${currentUser != null}" class="d-none d-md-inline-flex align-items-center gap-2 px-2 py-1 rounded-pill border bg-light me-1">
+            <span class="role-badge"
+                  th:classappend="${currentUser.role.badgeClass}"
+                  th:text="${currentUser.role.displayName}">Role</span>
+            <span class="small fw-semibold text-dark" th:text="${currentUser.fullName}">Employee</span>
+            <span class="small text-muted font-monospace" th:text="'(' + ${currentUser.username} + ')'">(id)</span>
+        </div>
+
+        <!-- Global Theme Toggle Button (Light Mode / Dark Mode) -->
+        <button type="button"
+                id="themeToggleBtn"
+                class="theme-toggle-btn"
+                title="Switch between Light Mode and Dark Mode"
+                aria-label="Toggle Light and Dark Mode">
+            <i class="bi bi-moon-stars-fill" id="themeToggleIcon"></i>
+            <span id="themeToggleLabel">Dark Mode</span>
+        </button>
+
+        <a th:if="${@rbac.has('SALES_CREATE')}"
+           th:href="@{/sales/billing}"
+           class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm">
             <i class="bi bi-plus-circle"></i>
             <span>New Bill</span>
         </a>
-        <a th:href="@{/purchases/new}" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
+        <a th:if="${@rbac.has('PURCHASE_CREATE')}"
+           th:href="@{/purchases/new}"
+           class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 header-restock-btn">
             <i class="bi bi-cart-plus"></i>
             <span>Restock</span>
         </a>
     </div>
+    <script>
+        (function () {
+            function applyThemeState(theme) {
+                var normalized = (theme === 'dark') ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', normalized);
+                document.documentElement.setAttribute('data-bs-theme', normalized);
+                var icon = document.getElementById('themeToggleIcon');
+                var label = document.getElementById('themeToggleLabel');
+                var btn = document.getElementById('themeToggleBtn');
+                if (icon && label) {
+                    if (normalized === 'dark') {
+                        icon.className = 'bi bi-sun-fill text-warning';
+                        label.textContent = 'Light Mode';
+                        if (btn) btn.setAttribute('title', 'Switch to Light Mode');
+                    } else {
+                        icon.className = 'bi bi-moon-stars-fill';
+                        label.textContent = 'Dark Mode';
+                        if (btn) btn.setAttribute('title', 'Switch to Dark Mode');
+                    }
+                }
+            }
+
+            var currentTheme = 'light';
+            try {
+                currentTheme = localStorage.getItem('mz_theme') || 'light';
+            } catch (e) {}
+            applyThemeState(currentTheme);
+
+            var toggleBtn = document.getElementById('themeToggleBtn');
+            if (toggleBtn && !toggleBtn.dataset.boundTheme) {
+                toggleBtn.dataset.boundTheme = 'true';
+                toggleBtn.addEventListener('click', function () {
+                    var active = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+                    var next = active === 'dark' ? 'light' : 'dark';
+                    try {
+                        localStorage.setItem('mz_theme', next);
+                    } catch (e) {}
+                    applyThemeState(next);
+                });
+            }
+        })();
+    </script>
 </header>
 </body>
 </html>

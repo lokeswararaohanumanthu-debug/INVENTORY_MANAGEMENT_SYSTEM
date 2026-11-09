@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management &amp; RBAC Governance - INVENTRA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<div class="app-main">
+    <div th:replace="~{fragments/header :: header('User Management & RBAC Access Control')}"></div>
+
+    <div class="page-container">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <!-- Top Governance Summary Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span class="metric-title">Total Staff Accounts</span>
+                        <span class="metric-icon-box icon-blue" style="width: 40px; height: 40px; font-size: 1.1rem;"><i class="bi bi-people-fill"></i></span>
+                    </div>
+                    <div class="metric-value" th:text="${totalUsersCount}">7</div>
+                    <div class="metric-subtitle">Individual employee credentials</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span class="metric-title">Active Accounts</span>
+                        <span class="metric-icon-box icon-green" style="width: 40px; height: 40px; font-size: 1.1rem;"><i class="bi bi-person-check-fill"></i></span>
+                    </div>
+                    <div class="metric-value text-success" th:text="${activeUsersCount}">7</div>
+                    <div class="metric-subtitle">Permitted to sign in</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span class="metric-title">Deactivated Accounts</span>
+                        <span class="metric-icon-box icon-red" style="width: 40px; height: 40px; font-size: 1.1rem;"><i class="bi bi-person-slash"></i></span>
+                    </div>
+                    <div class="metric-value text-secondary" th:text="${inactiveUsersCount}">0</div>
+                    <div class="metric-subtitle">Login blocked, audit preserved</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span class="metric-title">Predefined Roles</span>
+                        <span class="metric-icon-box icon-purple" style="width: 40px; height: 40px; font-size: 1.1rem;"><i class="bi bi-shield-lock-fill"></i></span>
+                    </div>
+                    <div class="metric-value">7 Roles</div>
+                    <div class="metric-subtitle">Granular permission hierarchy</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter & Action Toolbar -->
+        <div class="content-card mb-4">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 pb-3 mb-3 border-bottom">
+                <div class="catalog-status-pills">
+                    <a th:href="@{/users(status='ALL', role=${selectedRole}, search=${searchKeyword})}"
+                       class="catalog-status-pill"
+                       th:classappend="${selectedStatus == null or selectedStatus == 'ALL'} ? 'active' : ''">
+                        <i class="bi bi-people"></i>
+                        <span>All Employees</span>
+                        <span class="badge rounded-pill bg-secondary bg-opacity-25 text-reset ms-1" th:text="${totalUsersCount}">0</span>
+                    </a>
+                    <a th:href="@{/users(status='ACTIVE', role=${selectedRole}, search=${searchKeyword})}"
+                       class="catalog-status-pill"
+                       th:classappend="${selectedStatus == 'ACTIVE'} ? 'active' : ''">
+                        <i class="bi bi-check-circle"></i>
+                        <span>Active</span>
+                        <span class="badge rounded-pill bg-success bg-opacity-25 text-reset ms-1" th:text="${activeUsersCount}">0</span>
+                    </a>
+                    <a th:href="@{/users(status='INACTIVE', role=${selectedRole}, search=${searchKeyword})}"
+                       class="catalog-status-pill"
+                       th:classappend="${selectedStatus == 'INACTIVE'} ? 'active' : ''">
+                        <i class="bi bi-power"></i>
+                        <span>Deactivated</span>
+                        <span class="badge rounded-pill bg-secondary bg-opacity-25 text-reset ms-1" th:text="${inactiveUsersCount}">0</span>
+                    </a>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-toggle="collapse" data-bs-target="#roleMatrixCollapse">
+                        <i class="bi bi-table me-1"></i> 7-Role Permission Matrix
+                    </button>
+                    <button th:if="${@rbac.has('USER_MANAGE')}"
+                            type="button"
+                            class="btn btn-primary btn-sm px-3 shadow-sm"
+                            data-bs-toggle="modal"
+                            data-bs-target="#createUserModal">
+                        <i class="bi bi-person-plus-fill me-1"></i> Add New Employee
+                    </button>
+                </div>
+            </div>
+
+            <form th:action="@{/users}" method="get" class="row g-2 align-items-center">
+                <input type="hidden" name="status" th:value="${selectedStatus ?: 'ALL'}">
+                <div class="col-md-5">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="search" class="form-control"
+                               placeholder="Search by employee name, User ID, email or phone"
+                               th:value="${searchKeyword}">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select name="role" class="form-select" onchange="this.form.submit()">
+                        <option value="">-- All 7 Predefined Roles --</option>
+                        <option th:each="r : ${allRoles}"
+                                th:value="${r.name()}"
+                                th:text="${r.displayName}"
+                                th:selected="${selectedRole == r.name()}"></option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">Filter</button>
+                    <a th:href="@{/users}" class="btn btn-outline-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Collapsible 7-Role Permission Reference Matrix -->
+        <div class="collapse mb-4" id="roleMatrixCollapse">
+            <div class="content-card">
+                <div class="content-card-header">
+                    <h6 class="content-card-title mb-0"><i class="bi bi-shield-check text-primary me-2"></i>Predefined 7-Role Access Matrix</h6>
+                    <span class="badge bg-primary-subtle text-primary">RBAC Policy Reference</span>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6 col-xl-4" th:each="r : ${allRoles}">
+                        <div class="border rounded-3 p-3 h-100 bg-light">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span class="role-badge" th:classappend="${r.badgeClass}" th:text="${r.displayName}">Role</span>
+                                <span class="badge bg-white text-secondary border" th:text="${#sets.size(r.defaultPermissions)} + ' Permissions'">10 Perms</span>
+                            </div>
+                            <p class="small text-muted mb-2" th:text="${r.description}">Role description</p>
+                            <div class="d-flex flex-wrap">
+                                <span class="perm-chip" th:each="p : ${r.defaultPermissions}" th:text="${p.displayName}">Perm</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employee Accounts Table -->
+        <div class="table-custom">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                    <tr>
+                        <th>Employee Name</th>
+                        <th>User ID (Login)</th>
+                        <th>Assigned Role</th>
+                        <th>Contact Details</th>
+                        <th class="text-center">Effective Permissions</th>
+                        <th class="text-center">Account Status</th>
+                        <th>Last Login</th>
+                        <th class="text-center">Governance Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="u : ${users}" th:classappend="${!u.active} ? 'catalog-row-inactive' : ''">
+                        <td>
+                            <div class="fw-bold text-dark d-flex align-items-center gap-1">
+                                <span th:text="${u.fullName}">Employee Name</span>
+                                <span th:if="${u.protectedAccount}" class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"
+                                      style="font-size: 0.65rem;" title="Protected Root Super Admin">
+                                    <i class="bi bi-lock-fill"></i> Protected
+                                </span>
+                            </div>
+                            <small class="text-muted" th:if="${u.passwordChangeRequired}">
+                                <i class="bi bi-key text-warning"></i> Temp password active
+                            </small>
+                        </td>
+                        <td>
+                            <code class="fw-bold text-primary fs-6" th:text="${u.username}">superadmin</code>
+                        </td>
+                        <td>
+                            <span class="role-badge"
+                                  th:classappend="${u.role.badgeClass}"
+                                  th:text="${u.role.displayName}">Super Admin</span>
+                        </td>
+                        <td>
+                            <div class="small text-dark" th:if="${u.email != null and !u.email.isEmpty()}">
+                                <i class="bi bi-envelope text-muted me-1"></i><span th:text="${u.email}">email</span>
+                            </div>
+                            <div class="small text-muted" th:if="${u.phone != null and !u.phone.isEmpty()}">
+                                <i class="bi bi-telephone me-1"></i><span th:text="${u.phone}">phone</span>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-light text-dark border fw-semibold"
+                                  th:text="${#sets.size(u.effectivePermissions)} + ' active'">10 active</span>
+                            <div class="small text-primary mt-1" style="font-size: 0.7rem;"
+                                 th:if="${(u.customGrantedPermissions != null and !u.customGrantedPermissions.isEmpty()) or (u.customRevokedPermissions != null and !u.customRevokedPermissions.isEmpty())}">
+                                <i class="bi bi-sliders"></i> Customized
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <span class="catalog-status-badge status-active" th:if="${u.active}">
+                                <span class="status-dot dot-active"></span>
+                                <span>Active</span>
+                            </span>
+                            <span class="catalog-status-badge status-inactive" th:unless="${u.active}">
+                                <span class="status-dot dot-inactive"></span>
+                                <span>Deactivated</span>
+                            </span>
+                        </td>
+                        <td class="small text-muted">
+                            <span th:if="${u.lastLoginAt != null}" th:text="${#temporals.format(u.lastLoginAt, 'dd MMM yyyy, hh:mm a')}">04 Nov 2026</span>
+                            <span th:if="${u.lastLoginAt == null}" class="text-muted">Never signed in</span>
+                        </td>
+                        <td class="text-center">
+                            <div class="catalog-action-group" th:if="${@rbac.canManageTargetUser(u)}">
+                                <!-- 1. Edit User & Role -->
+                                <button th:if="${@rbac.has('USER_MANAGE')}"
+                                        type="button"
+                                        class="catalog-action-btn action-edit"
+                                        title="Edit User Details &amp; Role"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editUserModal"
+                                        th:attr="data-id=${u.id},data-username=${u.username},data-fullname=${u.fullName},data-email=${u.email},data-phone=${u.phone},data-role=${u.role.name()},data-protected=${u.protectedAccount}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+
+                                <!-- 2. Customize Granular Permissions (Super Admin Only) -->
+                                <button th:if="${canCustomizePermissions}"
+                                        type="button"
+                                        class="catalog-action-btn action-view"
+                                        title="Customize Granular Permissions (Super Admin)"
+                                        data-bs-toggle="modal"
+                                        th:attr="data-bs-target='#permModal-' + ${u.id}">
+                                    <i class="bi bi-Sliders2-vertical bi-sliders"></i>
+                                </button>
+
+                                <!-- 3. Reset Password -->
+                                <button th:if="${@rbac.has('USER_MANAGE')}"
+                                        type="button"
+                                        class="catalog-action-btn action-view"
+                                        title="Reset Employee Password"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#resetPasswordModal"
+                                        th:attr="data-id=${u.id},data-username=${u.username},data-fullname=${u.fullName}">
+                                    <i class="bi bi-key"></i>
+                                </button>
+
+                                <!-- 4. Activate / Deactivate Account -->
+                                <form th:if="${@rbac.has('USER_MANAGE') and !u.protectedAccount and (currentUser == null or u.id != currentUser.id)}"
+                                      th:action="@{'/users/toggle-status/' + ${u.id}}"
+                                      method="post"
+                                      class="d-inline m-0"
+                                      th:attr="onsubmit='return confirm(\'' + (${u.active} ? 'Deactivate ' : 'Activate ') + ${#strings.escapeJavaScript(u.fullName)} + ' (' + ${u.username} + ')?\');'">
+                                    <button type="submit"
+                                            class="catalog-action-btn"
+                                            th:classappend="${u.active} ? 'action-deactivate' : 'action-activate'"
+                                            th:title="${u.active} ? 'Deactivate Employee Account' : 'Activate Employee Account'">
+                                        <i class="bi bi-power"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            <span th:unless="${@rbac.canManageTargetUser(u)}"
+                                  class="badge bg-light text-muted border"
+                                  title="Higher or equal role hierarchy — protected from modification">
+                                <i class="bi bi-shield-lock me-1"></i>Hierarchy Protected
+                            </span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal 1: Create New Employee Account -->
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form th:action="@{/users/create}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-person-plus-fill text-primary me-2"></i>Create Employee Account</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Employee User ID (Username) <span class="text-danger">*</span></label>
+                            <input type="text" name="username" class="form-control" placeholder="e.g. salesman02" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Temporary Password <span class="text-danger">*</span></label>
+                            <input type="text" name="password" class="form-control" placeholder="Min 6 characters" required minlength="6">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Employee Full Name <span class="text-danger">*</span></label>
+                            <input type="text" name="fullName" class="form-control" placeholder="e.g. Rohit Subramanian" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Assign Predefined Role <span class="text-danger">*</span></label>
+                            <select name="role" class="form-select" required>
+                                <option th:each="r : ${assignableRoles}"
+                                        th:value="${r.name()}"
+                                        th:text="${r.displayName} + ' — ' + ${r.description}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Official Email</label>
+                            <input type="email" name="email" class="form-control" placeholder="employee@INVENTRA.in">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Mobile Number</label>
+                            <input type="text" name="phone" class="form-control" placeholder="+91 98765 43210">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i>Create Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: Edit Employee Details & Role -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="editUserForm" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" th:if="${_csrf != null}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square text-primary me-2"></i>Edit Employee &amp; Role</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small text-muted">User ID (Immutable Login Identifier)</label>
+                        <input type="text" id="editUsername" class="form-control font-monospace" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Employee Full Name <span class="text-danger">*</span></label>
+                        <input type="text" id="editFullName" name="fullName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Assigned Role <span class="text-danger">*</span></label>
+                        <select id="editRoleSelect" name="role" class="form-select" required>
+                            <option th:each="r : ${assignableRoles}"
+                                    th:value="${r.name()}"
+                                    th:text="${r.displayName}"></option>
+                        </select>
+                        <small id="editProtectedRoleNote" class="text-warning d-none mt-1">
+                            <i class="bi bi-lock-fill"></i> Protected Super Admin role cannot be downgraded.
+                        </small>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Email</label>
+                            <input type="email" id="editEmail" name="email" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Phone</label>
+                            <input type="text" id="editPhone" name="phone" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 3: Reset Employee Password -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="resetPasswordForm" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" th:if="${_csrf != null}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-key-fill text-warning me-2"></i>Reset Employee Password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted mb-3">
+                        Resetting password for <strong id="resetFullName" class="text-dark">Employee</strong>
+                        (<code id="resetUsername">user</code>). The password will be hashed with BCrypt.
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">New Temporary Password <span class="text-danger">*</span></label>
+                        <input type="text" name="newPassword" class="form-control font-monospace"
+                               placeholder="Enter new password (min 6 chars)" required minlength="6">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning fw-semibold">Reset Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 4: Customize Granular Permissions per User (Super Admin Only) -->
+<th:block th:if="${canCustomizePermissions}" th:each="u : ${users}">
+    <div class="modal fade" th:id="'permModal-' + ${u.id}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form th:action="@{'/users/permissions/' + ${u.id}}" method="post">
+                    <div class="modal-header">
+                        <div>
+                            <h5 class="modal-title fw-bold mb-0">
+                                <i class="bi bi-sliders text-primary me-2"></i>Granular Permission Overrides — <span th:text="${u.fullName}">User</span>
+                            </h5>
+                            <small class="text-muted">
+                                Base Role: <strong th:text="${u.role.displayName}">Role</strong> (<code th:text="${u.username}">id</code>)
+                            </small>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" style="max-height: 68vh; overflow-y: auto;">
+                        <div class="alert alert-info py-2 small mb-3">
+                            <i class="bi bi-info-circle-fill me-1"></i>
+                            Select additional permissions to <strong>Grant</strong> above the role's defaults, or select permissions to explicitly <strong>Revoke</strong>.
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <h6 class="fw-bold text-success small text-uppercase mb-2">
+                                    <i class="bi bi-plus-circle me-1"></i>Extra Granted Permissions
+                                </h6>
+                                <div class="border rounded p-2" style="max-height: 320px; overflow-y: auto;">
+                                    <div class="form-check mb-1" th:each="p : ${allPermissions}">
+                                        <input class="form-check-input" type="checkbox"
+                                               name="grantedPermissions"
+                                               th:value="${p.name()}"
+                                               th:id="'grant-' + ${u.id} + '-' + ${p.name()}"
+                                               th:checked="${u.customGrantedPermissions != null and #strings.contains(u.customGrantedPermissions, p.name())}">
+                                        <label class="form-check-label small" th:for="'grant-' + ${u.id} + '-' + ${p.name()}">
+                                            <span class="fw-semibold" th:text="${p.displayName}">Perm</span>
+                                            <span class="text-muted" style="font-size: 0.7rem;" th:text="'(' + ${p.module} + ')'"></span>
+                                            <span th:if="${#sets.contains(u.role.defaultPermissions, p)}"
+                                                  class="badge bg-secondary-subtle text-secondary ms-1" style="font-size: 0.65rem;">Role Default</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="fw-bold text-danger small text-uppercase mb-2">
+                                    <i class="bi bi-dash-circle me-1"></i>Explicitly Revoked Permissions
+                                </h6>
+                                <div class="border rounded p-2" style="max-height: 320px; overflow-y: auto;">
+                                    <div class="form-check mb-1" th:each="p : ${allPermissions}">
+                                        <input class="form-check-input" type="checkbox"
+                                               name="revokedPermissions"
+                                               th:value="${p.name()}"
+                                               th:id="'revoke-' + ${u.id} + '-' + ${p.name()}"
+                                               th:checked="${u.customRevokedPermissions != null and #strings.contains(u.customRevokedPermissions, p.name())}">
+                                        <label class="form-check-label small" th:for="'revoke-' + ${u.id} + '-' + ${p.name()}">
+                                            <span class="fw-semibold" th:text="${p.displayName}">Perm</span>
+                                            <span class="text-muted" style="font-size: 0.7rem;" th:text="'(' + ${p.module} + ')'"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Permission Overrides</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const editModal = document.getElementById('editUserModal');
+    if (editModal) {
+        editModal.addEventListener('show.bs.modal', function (event) {
+            const btn = event.relatedTarget;
+            const id = btn.getAttribute('data-id');
+            const username = btn.getAttribute('data-username');
+            const fullName = btn.getAttribute('data-fullname');
+            const email = btn.getAttribute('data-email') || '';
+            const phone = btn.getAttribute('data-phone') || '';
+            const role = btn.getAttribute('data-role');
+            const isProtected = btn.getAttribute('data-protected') === 'true';
+
+            document.getElementById('editUserForm').setAttribute('action', '/users/update/' + id);
+            document.getElementById('editUsername').value = username;
+            document.getElementById('editFullName').value = fullName;
+            document.getElementById('editEmail').value = email;
+            document.getElementById('editPhone').value = phone;
+
+            const roleSelect = document.getElementById('editRoleSelect');
+            if (roleSelect) {
+                roleSelect.value = role;
+            }
+            const note = document.getElementById('editProtectedRoleNote');
+            if (note) {
+                if (isProtected) {
+                    note.classList.remove('d-none');
+                } else {
+                    note.classList.add('d-none');
+                }
+            }
+        });
+    }
+
+    const resetModal = document.getElementById('resetPasswordModal');
+    if (resetModal) {
+        resetModal.addEventListener('show.bs.modal', function (event) {
+            const btn = event.relatedTarget;
+            const id = btn.getAttribute('data-id');
+            document.getElementById('resetPasswordForm').setAttribute('action', '/users/reset-password/' + id);
+            document.getElementById('resetFullName').textContent = btn.getAttribute('data-fullname');
+            document.getElementById('resetUsername').textContent = btn.getAttribute('data-username');
+        });
+    }
+</script>
+</body>
+</html>
+

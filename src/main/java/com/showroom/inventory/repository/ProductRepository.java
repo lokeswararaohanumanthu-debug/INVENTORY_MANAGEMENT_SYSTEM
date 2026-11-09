@@ -37,7 +37,25 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     boolean existsByProductCode(String productCode);
 
     /**
-     * Search active products by keyword across name, brand, model, and product code.
+     * Find a product by its manufacturer barcode (EAN / UPC / Code-128).
+     * Used by the POS billing counter for camera scanning and manual barcode entry.
+     *
+     * @param barcode the barcode value to search for
+     * @return an Optional containing the product if found
+     */
+    Optional<Product> findByBarcode(String barcode);
+
+    /**
+     * Find a product by product code ignoring case. Used as a barcode fallback so that
+     * Code-128 labels printed with the showroom SKU (e.g. MOB-IP15P) can also be scanned.
+     *
+     * @param productCode the product code to search for
+     * @return an Optional containing the product if found
+     */
+    Optional<Product> findByProductCodeIgnoreCase(String productCode);
+
+    /**
+     * Search active products by keyword across name, brand, model, product code and barcode.
      * The search is case-insensitive and matches partial strings.
      *
      * @param keyword the search keyword to match against product fields
@@ -47,7 +65,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
            "(LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(p.brand) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(p.model) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(p.productCode) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+           "LOWER(p.productCode) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(p.barcode) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     List<Product> searchProducts(@Param("keyword") String keyword);
 
     /**

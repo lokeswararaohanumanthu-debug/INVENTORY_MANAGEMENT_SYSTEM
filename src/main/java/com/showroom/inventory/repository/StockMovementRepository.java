@@ -49,6 +49,6 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
      * @param pageable pagination information (e.g., PageRequest.of(0, 10))
      * @return list of recent stock movements limited by the pageable parameter
      */
-    @Query("SELECT sm FROM StockMovement sm ORDER BY sm.createdAt DESC")
+    @Query("SELECT sm FROM StockMovement sm LEFT JOIN FETCH sm.product ORDER BY sm.createdAt DESC")
     List<StockMovement> findRecentMovements(Pageable pageable);
 }

@@ -1,12 +1,19 @@
 package com.showroom.inventory.controller;
 
 import com.showroom.inventory.dto.ProductDTO;
+import com.showroom.inventory.entity.ApprovalRequest;
 import com.showroom.inventory.entity.Product;
+import com.showroom.inventory.entity.User;
 import com.showroom.inventory.enums.Category;
+import com.showroom.inventory.enums.Permission;
+import com.showroom.inventory.exception.DuplicateBarcodeException;
 import com.showroom.inventory.exception.DuplicateProductException;
+import com.showroom.inventory.service.ActivityLogService;
+import com.showroom.inventory.service.ApprovalService;
 import com.showroom.inventory.service.InventoryService;
 import com.showroom.inventory.service.ProductService;
 import jakarta.validation.Valid;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -24,10 +31,17 @@ public class ProductController {
 
     private final ProductService productService;
     private final InventoryService inventoryService;
+    private final ActivityLogService activityLogService;
+    private final ApprovalService approvalService;
 
-    public ProductController(ProductService productService, InventoryService inventoryService) {
+    public ProductController(ProductService productService,
+                             InventoryService inventoryService,
+                             ActivityLogService activityLogService,
+                             ApprovalService approvalService) {
         this.productService = productService;
         this.inventoryService = inventoryService;
+        this.activityLogService = activityLogService;
+        this.approvalService = approvalService;
     }
 
     @GetMapping
@@ -77,6 +91,17 @@ public class ProductController {
                               BindingResult bindingResult,
                               Model model,
                               RedirectAttributes redirectAttributes) {
+        User currentUser = activityLogService.getCurrentAuthenticatedUser();
+        if (productDto.getId() == null) {
+            if (currentUser == null || !currentUser.hasPermission(Permission.PRODUCT_ADD)) {
+                throw new AccessDeniedException("You do not have permission to add new products.");
+            }
+        } else {
+            if (currentUser == null || !currentUser.hasPermission(Permission.PRODUCT_EDIT)) {
+                throw new AccessDeniedException("You do not have permission to edit existing products.");
+            }
+        }
+
         if (bindingResult.hasErrors()) {
             model.addAttribute("categories", Category.values());
             model.addAttribute("isNew", productDto.getId() == null);
@@ -98,6 +123,12 @@ public class ProductController {
             model.addAttribute("isNew", productDto.getId() == null);
             model.addAttribute("activeNav", "products");
             return "products/form";
+        } catch (DuplicateBarcodeException ex) {
+            bindingResult.rejectValue("barcode", "duplicate", ex.getMessage());
+            model.addAttribute("categories", Category.values());
+            model.addAttribute("isNew", productDto.getId() == null);
+            model.addAttribute("activeNav", "products");
+            return "products/form";
         }
 
         return "redirect:/products";
@@ -113,16 +144,54 @@ public class ProductController {
     }
 
     @PostMapping("/deactivate/{id}")
-    public String deactivateProduct(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String deactivateProduct(@PathVariable Long id,
+                                    @RequestParam(value = "redirectTo", required = false) String redirectTo,
+                                    RedirectAttributes redirectAttributes) {
+        Product product = productService.getProductById(id);
         productService.deactivateProduct(id);
-        redirectAttributes.addFlashAttribute("successMessage", "Product deactivated successfully.");
+        redirectAttributes.addFlashAttribute("successMessage",
+                "Product '" + product.getName() + "' (" + product.getProductCode() + ") has been deactivated (Status: Inactive). All historical sales, purchase records, and inventory movements are preserved.");
+        if ("view".equalsIgnoreCase(redirectTo)) {
+            return "redirect:/products/view/" + id;
+        }
         return "redirect:/products";
     }
 
     @PostMapping("/reactivate/{id}")
-    public String reactivateProduct(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String reactivateProduct(@PathVariable Long id,
+                                    @RequestParam(value = "redirectTo", required = false) String redirectTo,
+                                    RedirectAttributes redirectAttributes) {
+        Product product = productService.getProductById(id);
         productService.reactivateProduct(id);
-        redirectAttributes.addFlashAttribute("successMessage", "Product reactivated successfully.");
+        redirectAttributes.addFlashAttribute("successMessage",
+                "Product '" + product.getName() + "' (" + product.getProductCode() + ") has been activated and is now available in the catalog.");
+        if ("view".equalsIgnoreCase(redirectTo)) {
+            return "redirect:/products/view/" + id;
+        }
+        return "redirect:/products";
+    }
+
+    @PostMapping("/delete/{id}")
+    public String deleteProduct(@PathVariable Long id,
+                                @RequestParam(value = "reason", required = false) String reason,
+                                RedirectAttributes redirectAttributes) {
+        User currentUser = activityLogService.getCurrentAuthenticatedUser();
+        if (currentUser == null || !currentUser.hasPermission(Permission.PRODUCT_DELETE)) {
+            throw new AccessDeniedException("You do not have permission to delete products.");
+        }
+        Product product = productService.getProductById(id);
+        ApprovalRequest req = approvalService.createRequest(
+                currentUser,
+                "PRODUCT_DELETION",
+                "PRODUCTS",
+                product.getId(),
+                product.getProductCode() + " - " + product.getName(),
+                "ARCHIVE_AND_PROTECT_HISTORY",
+                reason != null && !reason.isBlank() ? reason : "Product deletion / archival requested from catalogue"
+        );
+        productService.deactivateProduct(id);
+        redirectAttributes.addFlashAttribute("successMessage",
+                "Product '" + product.getName() + "' archived to preserve historical transactions and logged under approval request " + req.getRequestCode() + ".");
         return "redirect:/products";
     }
 }

@@ -21,6 +21,9 @@ public class ProductDTO {
     @Size(max = 20, message = "Product code cannot exceed 20 characters")
     private String productCode;
 
+    @Size(max = 50, message = "Barcode cannot exceed 50 characters")
+    private String barcode;
+
     @NotBlank(message = "Product name is required")
     @Size(max = 100, message = "Product name cannot exceed 100 characters")
     private String name;
@@ -71,6 +74,14 @@ public class ProductDTO {
 
     public void setProductCode(String productCode) {
         this.productCode = productCode;
+    }
+
+    public String getBarcode() {
+        return barcode;
+    }
+
+    public void setBarcode(String barcode) {
+        this.barcode = barcode;
     }
 
     public String getName() {

@@ -3,63 +3,263 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Purchase Orders - MobileZone Pro</title>
+    <title>Purchase &amp; Stock In - INVENTRA</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .vendor-summary-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1rem 1.15rem;
+            background: #ffffff;
+            text-decoration: none;
+            display: block;
+            color: inherit;
+            transition: all 0.16s ease;
+            height: 100%;
+        }
+        .vendor-summary-card:hover {
+            border-color: #93c5fd;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+            transform: translateY(-1px);
+            color: inherit;
+        }
+        .vendor-summary-card.active {
+            border-color: #2563eb;
+            background: #eff6ff;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
+        }
+        .vendor-icon-badge {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+            flex-shrink: 0;
+        }
+        .batch-product-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 0.22rem 0.55rem;
+            font-size: 0.78rem;
+            color: #1e293b;
+            margin: 0.12rem 0.2rem 0.12rem 0;
+        }
+        .stock-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: #ecfdf5;
+            color: #047857;
+            border: 1px solid #a7f3d0;
+            border-radius: 999px;
+            padding: 0.25rem 0.65rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+    </style>
 </head>
 <body>
 
 <div th:replace="~{fragments/sidebar :: sidebar}"></div>
 
 <div class="app-main">
-    <div th:replace="~{fragments/header :: header('Purchase & Restocking Orders')}"></div>
+    <div th:replace="~{fragments/header :: header('Purchase & Stock In — Vendor & Batch Tracking')}"></div>
 
     <div class="page-container">
         <div th:replace="~{fragments/alerts :: alerts}"></div>
 
-        <div class="d-flex align-items-center justify-content-between mb-4">
+        <!-- Top Header & Action -->
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
             <div>
-                <h5 class="fw-bold mb-1">Supplier Procurement History</h5>
-                <p class="text-muted small mb-0">Record and track inventory batches received from vendors.</p>
+                <h5 class="fw-bold mb-1 text-dark">
+                    <i class="bi bi-truck text-primary me-2"></i>Supplier Procurement &amp; Inventory Batch Ledger
+                </h5>
+                <p class="text-muted small mb-0">
+                    Track purchase orders, vendor batches, unit purchase prices, and stock-in status across all registered suppliers.
+                </p>
             </div>
-            <a th:href="@{/purchases/new}" class="btn btn-primary shadow-sm">
-                <i class="bi bi-cart-plus me-1"></i> New Purchase Order
-            </a>
+            <div class="d-flex align-items-center gap-2">
+                <a th:if="${@rbac.has('SUPPLIER_VIEW')}" th:href="@{/suppliers}" class="btn btn-outline-secondary btn-sm px-3">
+                    <i class="bi bi-buildings me-1"></i> Manage Vendors
+                </a>
+                <a th:if="${@rbac.has('PURCHASE_CREATE')}" th:href="@{/purchases/new}" class="btn btn-primary shadow-sm px-3">
+                    <i class="bi bi-cart-plus me-1"></i> New Purchase &amp; Stock In
+                </a>
+            </div>
         </div>
 
+        <!-- Vendor-Based Procurement Summary Cards (Click to Filter by Vendor) -->
+        <div class="mb-4">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="small fw-bold text-uppercase text-secondary">
+                    <i class="bi bi-diagram-3 me-1 text-primary"></i>Registered Vendors &amp; Batch Summary
+                </span>
+                <a th:if="${selectedSupplierId != null or (searchQuery != null and !searchQuery.isEmpty())}"
+                   th:href="@{/purchases}" class="small text-primary text-decoration-none fw-semibold">
+                    <i class="bi bi-x-circle me-1"></i>Reset Filters (Show All Vendors)
+                </a>
+            </div>
+
+            <div class="row g-3">
+                <!-- All Vendors Card -->
+                <div class="col-xl-3 col-md-6">
+                    <a th:href="@{/purchases}" class="vendor-summary-card"
+                       th:classappend="${selectedSupplierId == null} ? 'active' : ''">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="fw-bold text-dark">All Registered Vendors</span>
+                            <span class="vendor-icon-badge bg-primary bg-opacity-10 text-primary">
+                                <i class="bi bi-collection"></i>
+                            </span>
+                        </div>
+                        <div class="fs-5 fw-bold text-primary" th:text="${@currencyUtil.formatInr(totalProcurementAmount)}">₹0</div>
+                        <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top small text-muted">
+                            <span><strong class="text-dark" th:text="${totalOrdersCount}">0</strong> Purchase Batches</span>
+                            <span><strong class="text-dark" th:text="${totalUnitsReceived}">0</strong> Units Received</span>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Individual Vendor Cards -->
+                <div class="col-xl-3 col-md-6" th:each="vs : ${vendorSummaries}">
+                    <a th:href="@{/purchases(supplierId=${vs.supplier.id})}" class="vendor-summary-card"
+                       th:classappend="${selectedSupplierId != null and selectedSupplierId == vs.supplier.id} ? 'active' : ''">
+                        <div class="d-flex align-items-start justify-content-between mb-1">
+                            <div class="text-truncate pe-2">
+                                <div class="fw-bold text-dark text-truncate" th:text="${vs.supplier.name}">Vendor Name</div>
+                                <small class="text-muted d-block text-truncate">
+                                    <i class="bi bi-person me-1"></i><span th:text="${vs.supplier.contactPerson} ?: 'N/A'">Contact</span>
+                                    &bull; <span th:text="${vs.supplier.phone} ?: ''">Phone</span>
+                                </small>
+                            </div>
+                            <span class="vendor-icon-badge bg-light text-secondary border">
+                                <i class="bi bi-building-check"></i>
+                            </span>
+                        </div>
+                        <div class="fs-6 fw-bold text-dark mt-2" th:text="${@currencyUtil.formatInr(vs.totalAmount)}">₹0</div>
+                        <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top small text-muted">
+                            <span><strong class="text-dark" th:text="${vs.orderCount}">0</strong> PO Batches</span>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle"
+                                  th:text="${vs.totalUnits} + ' Units In'">0 Units In</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="content-card mb-4 py-3">
+            <form th:action="@{/purchases}" method="get" class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold text-secondary mb-1">
+                        <i class="bi bi-funnel me-1 text-primary"></i>Filter by Vendor / Supplier
+                    </label>
+                    <select name="supplierId" class="form-select form-select-sm" onchange="this.form.submit()" style="height: 38px;">
+                        <option value="">All Vendors &amp; Suppliers</option>
+                        <option th:each="s : ${suppliers}"
+                                th:value="${s.id}"
+                                th:selected="${selectedSupplierId != null and selectedSupplierId == s.id}"
+                                th:text="${s.name} + ' (' + (${s.contactPerson} ?: 'Vendor') + ')'"></option>
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label small fw-semibold text-secondary mb-1">
+                        <i class="bi bi-search me-1 text-primary"></i>Search PO Number, Vendor, or Product Name
+                    </label>
+                    <input type="text" name="search" class="form-control form-control-sm" style="height: 38px;"
+                           autocomplete="off"
+                           th:value="${searchQuery}">
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1" style="height: 38px;">
+                        <i class="bi bi-filter me-1"></i>Apply Filter
+                    </button>
+                    <a th:href="@{/purchases}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center px-3"
+                       style="height: 38px;" title="Clear Filters">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Purchases & Stock In Table -->
         <div class="table-custom">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead>
                     <tr>
-                        <th>PO Number</th>
-                        <th>Supplier</th>
-                        <th>Purchase Date</th>
-                        <th class="text-center">Items Count</th>
-                        <th class="text-end">Total Amount (₹)</th>
-                        <th>Notes</th>
-                        <th class="text-center">Action</th>
+                        <th style="width: 14%;">PO / Batch No.</th>
+                        <th style="width: 18%;">Vendor / Supplier</th>
+                        <th style="width: 10%;">Purchase Date</th>
+                        <th style="width: 28%;">Products Received &amp; Unit Cost</th>
+                        <th style="width: 9%;" class="text-center">Total Qty</th>
+                        <th style="width: 11%;" class="text-end">Total Amount (₹)</th>
+                        <th style="width: 10%;" class="text-center">Stock Status</th>
+                        <th style="width: 10%;" class="text-center">Action</th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr th:each="p : ${purchases}">
-                        <td class="font-monospace fw-bold text-primary" th:text="${p.purchaseNumber}">PO-20261104-1001</td>
-                        <td class="fw-semibold text-dark" th:text="${p.supplier.name}">Supplier</td>
-                        <td class="small text-muted" th:text="${p.purchaseDate}">2026-11-04</td>
-                        <td class="text-center">
-                            <span class="badge bg-light text-dark border" th:text="${#lists.size(p.items)} + ' items'">3 items</span>
+                        <td>
+                            <a th:href="@{'/purchases/view/' + ${p.id}}"
+                               class="font-monospace fw-bold text-primary text-decoration-none d-block"
+                               th:text="${p.purchaseNumber}">PO-20261104-1001</a>
+                            <small class="text-muted d-block text-truncate" style="max-width: 160px;"
+                                   th:title="${p.notes}" th:text="${p.notes} ?: 'Standard Stock In'">Notes</small>
                         </td>
-                        <td class="text-end fw-bold text-dark fs-6" th:text="'₹' + ${#numbers.formatDecimal(p.totalAmount, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
-                        <td class="small text-muted text-truncate" style="max-width: 200px;" th:text="${p.notes} ?: '-'">-</td>
+                        <td>
+                            <div class="fw-bold text-dark" th:text="${p.supplier.name}">Supplier Name</div>
+                            <small class="text-muted d-block">
+                                <i class="bi bi-person-badge me-1"></i><span th:text="${p.supplier.contactPerson} ?: 'N/A'">Contact</span>
+                            </small>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border fw-semibold">
+                                <i class="bi bi-calendar3 me-1 text-primary"></i><span th:text="${p.purchaseDate}">2026-11-04</span>
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-wrap">
+                                <span class="batch-product-pill" th:each="item : ${p.items}">
+                                    <i class="bi bi-box-seam text-primary"></i>
+                                    <span class="fw-semibold" th:text="${item.product.name}">Product</span>
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle"
+                                          th:text="'×' + ${item.quantity}">×10</span>
+                                    <span class="text-muted" th:text="'@ ' + ${@currencyUtil.formatInr(item.unitPrice)}">@ ₹0</span>
+                                </span>
+                            </div>
+                        </td>
                         <td class="text-center">
-                            <a th:href="@{'/purchases/view/' + ${p.id}}" class="btn btn-sm btn-outline-primary" title="View PO Details">
-                                <i class="bi bi-eye"></i> View
+                            <span class="fw-bold text-dark fs-6" th:text="${p.totalQuantity}">20</span>
+                            <small class="text-muted d-block" th:text="${#lists.size(p.items)} + ' SKUs'">2 SKUs</small>
+                        </td>
+                        <td class="text-end fw-bold text-dark fs-6"
+                            th:text="${@currencyUtil.formatInr(p.totalAmount)}">₹0</td>
+                        <td class="text-center">
+                            <span class="stock-status-badge">
+                                <i class="bi bi-check-circle-fill"></i> Stock Received
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <a th:href="@{'/purchases/view/' + ${p.id}}" class="btn btn-sm btn-outline-primary px-2"
+                               title="View Purchase Receipt &amp; Batch Breakdown">
+                                <i class="bi bi-file-earmark-text me-1"></i>Receipt
                             </a>
                         </td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(purchases)}">
-                        <td colspan="7" class="text-center py-4 text-muted">No purchase orders recorded yet.</td>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                            No purchase orders match the selected vendor or search filter.
+                        </td>
                     </tr>
                     </tbody>
                 </table>

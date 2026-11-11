@@ -366,102 +366,183 @@ public class ReportService {
                                      List<Expense> allExpenses) {
         DateTimeFormatter dayFmt = DateTimeFormatter.ofPattern("dd MMM", Locale.ENGLISH);
 
-        // Daily series: plot strictly the dates within [periodStart, periodEnd]
-        // If THIS_WEEK is selected, plot all 7 days of the week (Monday through Sunday)
-        // If a single day is selected (e.g. TODAY or YESTERDAY), show 7 days up to periodEnd so the line has trajectory
-        LocalDate chartStart;
-        LocalDate chartEnd;
-        String pKey = dashboard.getPeriodKey() != null ? dashboard.getPeriodKey().toUpperCase(Locale.ROOT) : "THIS_MONTH";
-        if ("THIS_WEEK".equals(pKey)) {
-            chartStart = periodStart;
-            chartEnd = periodStart.plusDays(6);
-        } else if ("TODAY".equals(pKey) || "YESTERDAY".equals(pKey) || periodStart.equals(periodEnd)) {
-            chartStart = periodEnd.minusDays(6);
-            chartEnd = periodEnd;
-        } else {
-            chartStart = periodStart;
-            chartEnd = periodEnd;
-            long span = ChronoUnit.DAYS.between(chartStart, chartEnd) + 1;
-            if (span > 31) {
-                chartStart = chartEnd.minusDays(30);
-            }
+        // 1. TODAY SALES SERIES: 7 Showroom Operational Time Slots (09:00 to 21:00)
+        String[] todaySlots = {"09:00", "11:00", "13:00", "15:00", "17:00", "19:00", "21:00"};
+        List<String> todayLabels = new ArrayList<>(Arrays.asList(todaySlots));
+        BigDecimal[] todayRev = new BigDecimal[7];
+        BigDecimal[] todayExp = new BigDecimal[7];
+        long[] todayInv = new long[7];
+        for (int i = 0; i < 7; i++) {
+            todayRev[i] = BigDecimal.ZERO;
+            todayExp[i] = BigDecimal.ZERO;
+            todayInv[i] = 0;
         }
 
-        List<String> dailyLabels = new ArrayList<>();
-        List<BigDecimal> dailyRev = new ArrayList<>();
-        List<BigDecimal> dailyExp = new ArrayList<>();
-        List<Long> dailyInv = new ArrayList<>();
+        List<Sale> todaySales = scopedSales.stream()
+                .filter(s -> today.equals(s.getSaleDate()))
+                .toList();
 
-        for (LocalDate d = chartStart; !d.isAfter(chartEnd); d = d.plusDays(1)) {
-            final LocalDate curr = d;
-            dailyLabels.add(curr.format(dayFmt));
-            BigDecimal r = scopedSales.stream()
-                    .filter(s -> curr.equals(s.getSaleDate()))
+        for (Sale s : todaySales) {
+            int hour = 11;
+            if (s.getCreatedAt() != null) {
+                hour = s.getCreatedAt().getHour();
+            }
+            int slotIdx;
+            if (hour < 10) slotIdx = 0;
+            else if (hour < 12) slotIdx = 1;
+            else if (hour < 14) slotIdx = 2;
+            else if (hour < 16) slotIdx = 3;
+            else if (hour < 18) slotIdx = 4;
+            else if (hour < 20) slotIdx = 5;
+            else slotIdx = 6;
+
+            BigDecimal amt = s.getNetAmount() != null ? s.getNetAmount() : BigDecimal.ZERO;
+            todayRev[slotIdx] = todayRev[slotIdx].add(amt);
+            todayInv[slotIdx]++;
+        }
+
+        List<Expense> todayExpenses = allExpenses.stream()
+                .filter(e -> today.equals(e.getExpenseDate()))
+                .toList();
+        for (Expense e : todayExpenses) {
+            int hour = 11;
+            if (e.getCreatedAt() != null) {
+                hour = e.getCreatedAt().getHour();
+            }
+            int slotIdx;
+            if (hour < 10) slotIdx = 0;
+            else if (hour < 12) slotIdx = 1;
+            else if (hour < 14) slotIdx = 2;
+            else if (hour < 16) slotIdx = 3;
+            else if (hour < 18) slotIdx = 4;
+            else if (hour < 20) slotIdx = 5;
+            else slotIdx = 6;
+
+            BigDecimal amt = e.getAmount() != null ? e.getAmount() : BigDecimal.ZERO;
+            todayExp[slotIdx] = todayExp[slotIdx].add(amt);
+        }
+
+        dashboard.setTodayLabels(todayLabels);
+        dashboard.setTodayRevenueSeries(Arrays.asList(todayRev));
+        dashboard.setTodayExpenseSeries(Arrays.asList(todayExp));
+        List<Long> todayInvList = new ArrayList<>();
+        for (long count : todayInv) todayInvList.add(count);
+        dashboard.setTodayInvoiceSeries(todayInvList);
+
+        // 2. 1-WEEK SALES SERIES: Exact 7 Days Leading Up to Today
+        List<String> weekLabels = new ArrayList<>();
+        List<BigDecimal> weekRev = new ArrayList<>();
+        List<BigDecimal> weekExp = new ArrayList<>();
+        List<Long> weekInv = new ArrayList<>();
+        BigDecimal weekTotalRev = BigDecimal.ZERO;
+        long weekTotalInvoices = 0;
+        long weekTotalUnits = 0;
+
+        for (int i = 6; i >= 0; i--) {
+            LocalDate d = today.minusDays(i);
+            String label = d.format(dayFmt);
+            if (d.equals(today)) {
+                label = label + " (Today)";
+            }
+            weekLabels.add(label);
+
+            List<Sale> dSales = scopedSales.stream()
+                    .filter(s -> d.equals(s.getSaleDate()))
+                    .toList();
+            BigDecimal r = dSales.stream()
                     .map(s -> s.getNetAmount() != null ? s.getNetAmount() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
-            long invCnt = scopedSales.stream().filter(s -> curr.equals(s.getSaleDate())).count();
+            BigDecimal ex = allExpenses.stream()
+                    .filter(e -> d.equals(e.getExpenseDate()))
+                    .map(e -> e.getAmount() != null ? e.getAmount() : BigDecimal.ZERO)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            long invCount = dSales.size();
+            long unitsCount = dSales.stream().mapToLong(Sale::getTotalItemsQuantity).sum();
+
+            weekRev.add(r);
+            weekExp.add(ex);
+            weekInv.add(invCount);
+
+            weekTotalRev = weekTotalRev.add(r);
+            weekTotalInvoices += invCount;
+            weekTotalUnits += unitsCount;
+        }
+
+        dashboard.setWeekLabels(weekLabels);
+        dashboard.setWeekRevenueSeries(weekRev);
+        dashboard.setWeekExpenseSeries(weekExp);
+        dashboard.setWeekInvoiceSeries(weekInv);
+        dashboard.setWeekTotalRevenue(weekTotalRev);
+        dashboard.setWeekTotalInvoices(weekTotalInvoices);
+        dashboard.setWeekTotalUnits(weekTotalUnits);
+
+        // 3. 1-MONTH SALES SERIES: Real Days of Selected / Current Month up to Today
+        LocalDate mStart = (periodStart != null && !periodStart.equals(today)) ? periodStart : today.withDayOfMonth(1);
+        LocalDate mEnd = (periodEnd != null && periodEnd.isBefore(today)) ? periodEnd : today;
+        if (mEnd.isAfter(today)) {
+            mEnd = today;
+        }
+        if (mStart.isAfter(mEnd)) {
+            mStart = mEnd;
+        }
+
+        List<String> monthLabels = new ArrayList<>();
+        List<BigDecimal> monthRev = new ArrayList<>();
+        List<BigDecimal> monthExp = new ArrayList<>();
+        List<Long> monthInv = new ArrayList<>();
+        BigDecimal monthTotalRev = BigDecimal.ZERO;
+        long monthTotalInvoices = 0;
+        long monthTotalUnits = 0;
+
+        for (LocalDate d = mStart; !d.isAfter(mEnd); d = d.plusDays(1)) {
+            final LocalDate curr = d;
+            monthLabels.add(curr.format(dayFmt));
+
+            List<Sale> dSales = scopedSales.stream()
+                    .filter(s -> curr.equals(s.getSaleDate()))
+                    .toList();
+            BigDecimal r = dSales.stream()
+                    .map(s -> s.getNetAmount() != null ? s.getNetAmount() : BigDecimal.ZERO)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
             BigDecimal ex = allExpenses.stream()
                     .filter(e -> curr.equals(e.getExpenseDate()))
                     .map(e -> e.getAmount() != null ? e.getAmount() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
-            dailyRev.add(r);
-            dailyExp.add(ex);
-            dailyInv.add(invCnt);
-        }
-        dashboard.setDailyLabels(dailyLabels);
-        dashboard.setDailyRevenueSeries(dailyRev);
-        dashboard.setDailyExpenseSeries(dailyExp);
-        dashboard.setDailyInvoiceSeries(dailyInv);
 
-        // Weekly series: 6 weeks leading up to periodEnd
-        List<String> weeklyLabels = new ArrayList<>();
-        List<BigDecimal> weeklyRev = new ArrayList<>();
-        List<BigDecimal> weeklyExp = new ArrayList<>();
-        LocalDate endWeekMonday = periodEnd.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-        for (int i = 5; i >= 0; i--) {
-            LocalDate wkStart = endWeekMonday.minusWeeks(i);
-            LocalDate wkEnd = wkStart.plusDays(6);
-            weeklyLabels.add(wkStart.format(dayFmt) + " - " + wkEnd.format(dayFmt));
-            BigDecimal r = scopedSales.stream()
-                    .filter(s -> s.getSaleDate() != null && !s.getSaleDate().isBefore(wkStart) && !s.getSaleDate().isAfter(wkEnd))
-                    .map(s -> s.getNetAmount() != null ? s.getNetAmount() : BigDecimal.ZERO)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigDecimal ex = allExpenses.stream()
-                    .filter(e -> e.getExpenseDate() != null && !e.getExpenseDate().isBefore(wkStart) && !e.getExpenseDate().isAfter(wkEnd))
-                    .map(e -> e.getAmount() != null ? e.getAmount() : BigDecimal.ZERO)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            weeklyRev.add(r);
-            weeklyExp.add(ex);
-        }
-        dashboard.setWeeklyLabels(weeklyLabels);
-        dashboard.setWeeklyRevenueSeries(weeklyRev);
-        dashboard.setWeeklyExpenseSeries(weeklyExp);
+            long invCount = dSales.size();
+            long unitsCount = dSales.stream().mapToLong(Sale::getTotalItemsQuantity).sum();
 
-        // Monthly series: 6 calendar months leading up to YearMonth.from(periodEnd)
-        DateTimeFormatter monthFmt = DateTimeFormatter.ofPattern("MMM yyyy", Locale.ENGLISH);
-        List<String> monthlyLabels = new ArrayList<>();
-        List<BigDecimal> monthlyRev = new ArrayList<>();
-        List<BigDecimal> monthlyExp = new ArrayList<>();
-        YearMonth targetYm = YearMonth.from(periodEnd);
-        for (int i = 5; i >= 0; i--) {
-            YearMonth ym = targetYm.minusMonths(i);
-            LocalDate mStart = ym.atDay(1);
-            LocalDate mEnd = ym.atEndOfMonth();
-            monthlyLabels.add(ym.format(monthFmt));
-            BigDecimal r = scopedSales.stream()
-                    .filter(s -> s.getSaleDate() != null && !s.getSaleDate().isBefore(mStart) && !s.getSaleDate().isAfter(mEnd))
-                    .map(s -> s.getNetAmount() != null ? s.getNetAmount() : BigDecimal.ZERO)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigDecimal ex = allExpenses.stream()
-                    .filter(e -> e.getExpenseDate() != null && !e.getExpenseDate().isBefore(mStart) && !e.getExpenseDate().isAfter(mEnd))
-                    .map(e -> e.getAmount() != null ? e.getAmount() : BigDecimal.ZERO)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            monthlyRev.add(r);
-            monthlyExp.add(ex);
+            monthRev.add(r);
+            monthExp.add(ex);
+            monthInv.add(invCount);
+
+            monthTotalRev = monthTotalRev.add(r);
+            monthTotalInvoices += invCount;
+            monthTotalUnits += unitsCount;
         }
-        dashboard.setMonthlyLabels(monthlyLabels);
-        dashboard.setMonthlyRevenueSeries(monthlyRev);
-        dashboard.setMonthlyExpenseSeries(monthlyExp);
+
+        dashboard.setMonthLabels(monthLabels);
+        dashboard.setMonthRevenueSeries(monthRev);
+        dashboard.setMonthExpenseSeries(monthExp);
+        dashboard.setMonthInvoiceSeries(monthInv);
+        dashboard.setMonthTotalRevenue(monthTotalRev);
+        dashboard.setMonthTotalInvoices(monthTotalInvoices);
+        dashboard.setMonthTotalUnits(monthTotalUnits);
+
+        // 4. Backward-compatible mappings
+        dashboard.setDailyLabels(todayLabels);
+        dashboard.setDailyRevenueSeries(Arrays.asList(todayRev));
+        dashboard.setDailyExpenseSeries(Arrays.asList(todayExp));
+        dashboard.setDailyInvoiceSeries(todayInvList);
+
+        dashboard.setWeeklyLabels(weekLabels);
+        dashboard.setWeeklyRevenueSeries(weekRev);
+        dashboard.setWeeklyExpenseSeries(weekExp);
+
+        dashboard.setMonthlyLabels(monthLabels);
+        dashboard.setMonthlyRevenueSeries(monthRev);
+        dashboard.setMonthlyExpenseSeries(monthExp);
     }
 
     private BigDecimal computeGrowthPercent(BigDecimal current, BigDecimal previous) {

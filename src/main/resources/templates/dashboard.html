@@ -607,13 +607,19 @@
                                 <span th:text="${ownSalesOnly != null and ownSalesOnly} ? 'My Sales Revenue Trend' : 'Sales Revenue Trend'">Sales Revenue Trend</span>
                             </h5>
                             <p class="exec-chart-subtitle">
-                                Real-time showroom billing trajectory (<span th:text="${dashboard.periodRangeText}">Period</span>)
+                                <span id="salesTrendSubtitle" th:text="${'Real-time showroom billing trajectory (' + dashboard.periodRangeText + ')'}">Real-time showroom billing trajectory</span>
                             </p>
                         </div>
                         <div class="exec-granularity-tabs" role="tablist" aria-label="Chart Granularity">
-                            <button type="button" class="exec-granularity-btn active" data-granularity="daily">Daily</button>
-                            <button type="button" class="exec-granularity-btn" data-granularity="weekly">Weekly</button>
-                            <button type="button" class="exec-granularity-btn" data-granularity="monthly">Monthly</button>
+                            <button type="button" class="exec-granularity-btn" data-granularity="today" id="btnGranularityToday">
+                                <i class="bi bi-clock-history me-1"></i>Today Sales
+                            </button>
+                            <button type="button" class="exec-granularity-btn" data-granularity="weekly" id="btnGranularityWeekly">
+                                <i class="bi bi-calendar-week me-1"></i>1 Week Sales
+                            </button>
+                            <button type="button" class="exec-granularity-btn active" data-granularity="monthly" id="btnGranularityMonthly">
+                                <i class="bi bi-calendar-month me-1"></i>1 Month Sales
+                            </button>
                         </div>
                     </div>
 
@@ -631,8 +637,12 @@
                             <span>Avg / Interval: <strong id="salesChartAvgLabel">₹0</strong></span>
                         </span>
                         <span class="chart-telemetry-pill">
-                            <i class="bi bi-Activity text-success"></i>
-                            <span>Invoices: <strong th:text="${dashboard.periodInvoiceCount}">0</strong> (<strong th:text="${dashboard.periodUnitsSold}">0</strong> units)</span>
+                            <i class="bi bi-currency-rupee text-success"></i>
+                            <span>Revenue: <strong id="salesChartTotalLabel" class="text-success">₹0</strong></span>
+                        </span>
+                        <span class="chart-telemetry-pill">
+                            <i class="bi bi-receipt text-info"></i>
+                            <span>Invoices: <strong id="salesChartInvoicesLabel" th:text="${dashboard.periodInvoiceCount}">0</strong> (<strong th:text="${dashboard.periodUnitsSold}">0</strong> units)</span>
                         </span>
                     </div>
 
@@ -1236,20 +1246,41 @@
 
         // Real database chart series injected from DashboardDTO
         const chartData = {
-            daily: {
-                labels: /*[[${dashboard.dailyLabels}]]*/ [],
-                revenue: /*[[${dashboard.dailyRevenueSeries}]]*/ [],
-                expenses: /*[[${dashboard.dailyExpenseSeries}]]*/ []
+            today: {
+                labels: /*[[${dashboard.todayLabels}]]*/ [],
+                revenue: /*[[${dashboard.todayRevenueSeries}]]*/ [],
+                expenses: /*[[${dashboard.todayExpenseSeries}]]*/ [],
+                invoices: /*[[${dashboard.todayInvoiceSeries}]]*/ [],
+                totalRevenue: /*[[${dashboard.todaySales}]]*/ 0,
+                invoiceCount: /*[[${dashboard.todayInvoiceCount}]]*/ 0,
+                subtitle: "Today Sales Revenue Trend (Hourly Showroom Trajectory)"
             },
             weekly: {
-                labels: /*[[${dashboard.weeklyLabels}]]*/ [],
-                revenue: /*[[${dashboard.weeklyRevenueSeries}]]*/ [],
-                expenses: /*[[${dashboard.weeklyExpenseSeries}]]*/ []
+                labels: /*[[${dashboard.weekLabels}]]*/ [],
+                revenue: /*[[${dashboard.weekRevenueSeries}]]*/ [],
+                expenses: /*[[${dashboard.weekExpenseSeries}]]*/ [],
+                invoices: /*[[${dashboard.weekInvoiceSeries}]]*/ [],
+                totalRevenue: /*[[${dashboard.weekTotalRevenue}]]*/ 0,
+                invoiceCount: /*[[${dashboard.weekTotalInvoices}]]*/ 0,
+                subtitle: "1 Week Sales Revenue Trend (Daily Trajectory - 7 Days)"
             },
             monthly: {
-                labels: /*[[${dashboard.monthlyLabels}]]*/ [],
-                revenue: /*[[${dashboard.monthlyRevenueSeries}]]*/ [],
-                expenses: /*[[${dashboard.monthlyExpenseSeries}]]*/ []
+                labels: /*[[${dashboard.monthLabels}]]*/ [],
+                revenue: /*[[${dashboard.monthRevenueSeries}]]*/ [],
+                expenses: /*[[${dashboard.monthExpenseSeries}]]*/ [],
+                invoices: /*[[${dashboard.monthInvoiceSeries}]]*/ [],
+                totalRevenue: /*[[${dashboard.monthTotalRevenue}]]*/ 0,
+                invoiceCount: /*[[${dashboard.monthTotalInvoices}]]*/ 0,
+                subtitle: "1 Month Sales Revenue Trend (Month-to-Date Trajectory)"
+            },
+            daily: {
+                labels: /*[[${dashboard.todayLabels}]]*/ [],
+                revenue: /*[[${dashboard.todayRevenueSeries}]]*/ [],
+                expenses: /*[[${dashboard.todayExpenseSeries}]]*/ [],
+                invoices: /*[[${dashboard.todayInvoiceSeries}]]*/ [],
+                totalRevenue: /*[[${dashboard.todaySales}]]*/ 0,
+                invoiceCount: /*[[${dashboard.todayInvoiceCount}]]*/ 0,
+                subtitle: "Today Sales Revenue Trend"
             },
             pnl: {
                 revenue: /*[[${dashboard.monthlyRevenue}]]*/ 0,
@@ -1276,7 +1307,25 @@
             return '₹' + Math.round(num).toLocaleString('en-IN');
         }
 
-        let activeGranularity = 'daily';
+        const selectedPeriodKey = /*[[${selectedPeriod}]]*/ 'THIS_MONTH';
+        let activeGranularity = 'monthly';
+        if (selectedPeriodKey === 'TODAY' || selectedPeriodKey === 'YESTERDAY') {
+            activeGranularity = 'today';
+        } else if (selectedPeriodKey === 'THIS_WEEK' || selectedPeriodKey === 'LAST_7_DAYS') {
+            activeGranularity = 'weekly';
+        } else {
+            activeGranularity = 'monthly';
+        }
+
+        // Initialize active class on the corresponding granularity button
+        document.querySelectorAll('.exec-granularity-btn').forEach(b => {
+            if (b.getAttribute('data-granularity') === activeGranularity) {
+                b.classList.add('active');
+            } else {
+                b.classList.remove('active');
+            }
+        });
+
         let hitPoints = [];
         let hoveredPoint = null;
         let chartStartTime = performance.now();
@@ -1325,10 +1374,11 @@
             const phase = animPhase || 0;
             const ep = entryProgress !== undefined ? entryProgress : 1;
 
-            const series = chartData[activeGranularity] || chartData.daily;
+            const series = chartData[activeGranularity] || chartData.monthly;
             const labels = series.labels || [];
             const revValues = (series.revenue || []).map(Number);
             const expValues = (series.expenses || []).map(Number);
+            const invValues = (series.invoices || []).map(Number);
 
             ctx.clearRect(0, 0, width, height);
 
@@ -1345,12 +1395,27 @@
 
             // Update telemetry strip badges
             const peakValue = revValues.length ? Math.max(0, ...revValues) : 0;
-            const sumRev = revValues.reduce((a, b) => a + b, 0);
+            const sumRev = series.totalRevenue !== undefined && Number(series.totalRevenue) > 0
+                ? Number(series.totalRevenue)
+                : revValues.reduce((a, b) => a + b, 0);
             const avgValue = revValues.length ? (sumRev / revValues.length) : 0;
+            const totalInvoices = series.invoiceCount !== undefined && Number(series.invoiceCount) > 0
+                ? Number(series.invoiceCount)
+                : invValues.reduce((a, b) => a + b, 0);
+
             const peakEl = document.getElementById('salesChartPeakLabel');
             const avgEl = document.getElementById('salesChartAvgLabel');
+            const totalEl = document.getElementById('salesChartTotalLabel');
+            const invEl = document.getElementById('salesChartInvoicesLabel');
             if (peakEl) peakEl.textContent = formatInrShort(peakValue);
             if (avgEl) avgEl.textContent = formatInrShort(avgValue);
+            if (totalEl) totalEl.textContent = formatInrFull(sumRev);
+            if (invEl) invEl.textContent = totalInvoices;
+
+            const subTitleEl = document.getElementById('salesTrendSubtitle');
+            if (subTitleEl && series.subtitle) {
+                subTitleEl.textContent = series.subtitle;
+            }
 
             // 1. Detailed Horizontal & Vertical Sub-Grid Matrix
             const gridColor = isDark ? 'rgba(51, 65, 85, 0.7)' : 'rgba(226, 232, 240, 0.9)';
@@ -1397,6 +1462,7 @@
                 const x = labels.length > 1 ? padLeft + idx * stepX : padLeft + plotW / 2;
                 const rVal = revValues[idx] || 0;
                 const eVal = expValues[idx] || 0;
+                const iVal = invValues[idx] || 0;
                 if (rVal > bestRev) { bestRev = rVal; peakIdx = idx; }
 
                 // Subtle continuous breathing wave on the curve points
@@ -1406,7 +1472,7 @@
 
                 const yRev = Math.min(padTop + plotH, Math.max(padTop + 4, padTop + plotH - baseRevH + wave * 0.65));
                 const yExp = Math.min(padTop + plotH, Math.max(padTop + 4, padTop + plotH - baseExpH - wave * 0.45));
-                const ptObj = { x, yRev, yExp, label: lbl, revenue: rVal, expense: eVal, idx };
+                const ptObj = { x, yRev, yExp, label: lbl, revenue: rVal, expense: eVal, invoices: iVal, idx };
                 hitPoints.push(ptObj);
                 return ptObj;
             });
@@ -1755,6 +1821,9 @@
                     const netDelta = closest.revenue - (closest.expense || 0);
                     let html = '<div class="fw-bold mb-1 border-bottom border-secondary pb-1">' + closest.label + '</div>';
                     html += '<div>Revenue: <strong class="text-info">' + formatInrFull(closest.revenue) + '</strong></div>';
+                    if (closest.invoices !== undefined) {
+                        html += '<div>Invoices: <strong>' + closest.invoices + ' bill' + (closest.invoices === 1 ? '' : 's') + '</strong></div>';
+                    }
                     if (chartData.showExpenses) {
                         html += '<div>Expenses: <strong class="text-warning">' + formatInrFull(closest.expense) + '</strong></div>';
                         html += '<div>Net Flow: <strong class="' + (netDelta >= 0 ? 'text-success' : 'text-danger') + '">' + formatInrFull(netDelta) + '</strong></div>';
@@ -1773,12 +1842,12 @@
             });
         }
 
-        // Granularity toggle buttons (Daily / Weekly / Monthly)
+        // Granularity toggle buttons (Today Sales / 1 Week Sales / 1 Month Sales)
         document.querySelectorAll('.exec-granularity-btn').forEach(btn => {
             btn.addEventListener('click', function () {
                 document.querySelectorAll('.exec-granularity-btn').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
-                activeGranularity = this.getAttribute('data-granularity') || 'daily';
+                activeGranularity = this.getAttribute('data-granularity') || 'monthly';
                 granularitySwitchTime = performance.now();
             });
         });
@@ -1787,15 +1856,16 @@
         const exportBtn = document.getElementById('exportDashboardCsvBtn');
         if (exportBtn) {
             exportBtn.addEventListener('click', function () {
+                const cur = chartData[activeGranularity] || chartData.monthly;
                 const rows = [
-                    ['Metric / Date', 'Sales Revenue (INR)', 'Expenses (INR)']
+                    ['Interval / Date', 'Sales Revenue (INR)', 'Invoices Count', 'Expenses (INR)']
                 ];
-                const daily = chartData.daily;
-                for (let i = 0; i < (daily.labels || []).length; i++) {
+                for (let i = 0; i < (cur.labels || []).length; i++) {
                     rows.push([
-                        daily.labels[i],
-                        daily.revenue[i] || 0,
-                        chartData.showExpenses ? (daily.expenses[i] || 0) : 'N/A'
+                        cur.labels[i],
+                        cur.revenue[i] || 0,
+                        cur.invoices ? (cur.invoices[i] || 0) : 'N/A',
+                        chartData.showExpenses ? (cur.expenses[i] || 0) : 'N/A'
                     ]);
                 }
                 const csvContent = rows.map(r => r.join(',')).join('\n');
@@ -1803,7 +1873,7 @@
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
-                link.setAttribute('download', 'INVENTRA-pro-dashboard-analytics.csv');
+                link.setAttribute('download', 'INVENTRA-' + activeGranularity + '-sales-trend.csv');
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);

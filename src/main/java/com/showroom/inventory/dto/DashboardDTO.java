@@ -76,6 +76,28 @@ public class DashboardDTO {
     private List<VendorProcurementItem> vendorProcurementBreakdown = new ArrayList<>();
 
     // Interactive Chart Series (JSON-safe lists)
+    private List<String> todayLabels = new ArrayList<>();
+    private List<BigDecimal> todayRevenueSeries = new ArrayList<>();
+    private List<BigDecimal> todayExpenseSeries = new ArrayList<>();
+    private List<Long> todayInvoiceSeries = new ArrayList<>();
+
+    private List<String> weekLabels = new ArrayList<>();
+    private List<BigDecimal> weekRevenueSeries = new ArrayList<>();
+    private List<BigDecimal> weekExpenseSeries = new ArrayList<>();
+    private List<Long> weekInvoiceSeries = new ArrayList<>();
+    private BigDecimal weekTotalRevenue = BigDecimal.ZERO;
+    private long weekTotalInvoices = 0;
+    private long weekTotalUnits = 0;
+
+    private List<String> monthLabels = new ArrayList<>();
+    private List<BigDecimal> monthRevenueSeries = new ArrayList<>();
+    private List<BigDecimal> monthExpenseSeries = new ArrayList<>();
+    private List<Long> monthInvoiceSeries = new ArrayList<>();
+    private BigDecimal monthTotalRevenue = BigDecimal.ZERO;
+    private long monthTotalInvoices = 0;
+    private long monthTotalUnits = 0;
+
+    // Legacy / general series fallbacks
     private List<String> dailyLabels = new ArrayList<>();
     private List<BigDecimal> dailyRevenueSeries = new ArrayList<>();
     private List<BigDecimal> dailyExpenseSeries = new ArrayList<>();
@@ -299,6 +321,60 @@ public class DashboardDTO {
 
     public List<VendorProcurementItem> getVendorProcurementBreakdown() { return vendorProcurementBreakdown; }
     public void setVendorProcurementBreakdown(List<VendorProcurementItem> vendorProcurementBreakdown) { this.vendorProcurementBreakdown = vendorProcurementBreakdown; }
+
+    public List<String> getTodayLabels() { return todayLabels; }
+    public void setTodayLabels(List<String> todayLabels) { this.todayLabels = todayLabels; }
+
+    public List<BigDecimal> getTodayRevenueSeries() { return todayRevenueSeries; }
+    public void setTodayRevenueSeries(List<BigDecimal> todayRevenueSeries) { this.todayRevenueSeries = todayRevenueSeries; }
+
+    public List<BigDecimal> getTodayExpenseSeries() { return todayExpenseSeries; }
+    public void setTodayExpenseSeries(List<BigDecimal> todayExpenseSeries) { this.todayExpenseSeries = todayExpenseSeries; }
+
+    public List<Long> getTodayInvoiceSeries() { return todayInvoiceSeries; }
+    public void setTodayInvoiceSeries(List<Long> todayInvoiceSeries) { this.todayInvoiceSeries = todayInvoiceSeries; }
+
+    public List<String> getWeekLabels() { return weekLabels; }
+    public void setWeekLabels(List<String> weekLabels) { this.weekLabels = weekLabels; }
+
+    public List<BigDecimal> getWeekRevenueSeries() { return weekRevenueSeries; }
+    public void setWeekRevenueSeries(List<BigDecimal> weekRevenueSeries) { this.weekRevenueSeries = weekRevenueSeries; }
+
+    public List<BigDecimal> getWeekExpenseSeries() { return weekExpenseSeries; }
+    public void setWeekExpenseSeries(List<BigDecimal> weekExpenseSeries) { this.weekExpenseSeries = weekExpenseSeries; }
+
+    public List<Long> getWeekInvoiceSeries() { return weekInvoiceSeries; }
+    public void setWeekInvoiceSeries(List<Long> weekInvoiceSeries) { this.weekInvoiceSeries = weekInvoiceSeries; }
+
+    public BigDecimal getWeekTotalRevenue() { return weekTotalRevenue != null ? weekTotalRevenue : BigDecimal.ZERO; }
+    public void setWeekTotalRevenue(BigDecimal weekTotalRevenue) { this.weekTotalRevenue = weekTotalRevenue; }
+
+    public long getWeekTotalInvoices() { return weekTotalInvoices; }
+    public void setWeekTotalInvoices(long weekTotalInvoices) { this.weekTotalInvoices = weekTotalInvoices; }
+
+    public long getWeekTotalUnits() { return weekTotalUnits; }
+    public void setWeekTotalUnits(long weekTotalUnits) { this.weekTotalUnits = weekTotalUnits; }
+
+    public List<String> getMonthLabels() { return monthLabels; }
+    public void setMonthLabels(List<String> monthLabels) { this.monthLabels = monthLabels; }
+
+    public List<BigDecimal> getMonthRevenueSeries() { return monthRevenueSeries; }
+    public void setMonthRevenueSeries(List<BigDecimal> monthRevenueSeries) { this.monthRevenueSeries = monthRevenueSeries; }
+
+    public List<BigDecimal> getMonthExpenseSeries() { return monthExpenseSeries; }
+    public void setMonthExpenseSeries(List<BigDecimal> monthExpenseSeries) { this.monthExpenseSeries = monthExpenseSeries; }
+
+    public List<Long> getMonthInvoiceSeries() { return monthInvoiceSeries; }
+    public void setMonthInvoiceSeries(List<Long> monthInvoiceSeries) { this.monthInvoiceSeries = monthInvoiceSeries; }
+
+    public BigDecimal getMonthTotalRevenue() { return monthTotalRevenue != null ? monthTotalRevenue : BigDecimal.ZERO; }
+    public void setMonthTotalRevenue(BigDecimal monthTotalRevenue) { this.monthTotalRevenue = monthTotalRevenue; }
+
+    public long getMonthTotalInvoices() { return monthTotalInvoices; }
+    public void setMonthTotalInvoices(long monthTotalInvoices) { this.monthTotalInvoices = monthTotalInvoices; }
+
+    public long getMonthTotalUnits() { return monthTotalUnits; }
+    public void setMonthTotalUnits(long monthTotalUnits) { this.monthTotalUnits = monthTotalUnits; }
 
     public List<String> getDailyLabels() { return dailyLabels; }
     public void setDailyLabels(List<String> dailyLabels) { this.dailyLabels = dailyLabels; }
